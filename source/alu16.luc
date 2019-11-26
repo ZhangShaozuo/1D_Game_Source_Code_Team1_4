@@ -1,0 +1,43 @@
+//This module describe the design of 16bits alu
+
+module alu16 (
+    input alufn[6],    
+    input a[16],       
+    input b[16],       
+    output alu[16],    
+    output z,          
+    output v,         
+    output n   
+  ) {
+
+  .alufn(alufn[3:0]) {
+    .a(a) {
+  
+      shift16 shifter(.b(b[4:0])); //shifter is connected to a and the lower order 5 bits of input b
+      
+      .b(b) {
+        adder16 addercomp; //a and b are connected to both adder and boolean operator.
+        boole16 boolean;
+      }
+    }
+    //comparator is connected to z, v, n, which are the outputs of adder16.
+    compare16 comparator(.z(addercomp.z), .v(addercomp.v), .n(addercomp.n));
+  }
+    
+  always {
+
+    z = addercomp.z;
+    v = addercomp.v;
+    n = addercomp.n;
+
+    case(alufn[5:4]) {
+      //alu[5:4] are used to select which operation to operate,
+      //and the results are connected to alu(the output name)
+      b00: alu = addercomp.out;
+      b01: alu = boolean.boole;
+      b10: alu = shifter.shift;
+      b11: alu = comparator.cmp;
+      default: alu = 16b0;
+    }
+  }
+}

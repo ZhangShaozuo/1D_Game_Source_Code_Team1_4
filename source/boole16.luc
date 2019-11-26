@@ -1,0 +1,31 @@
+//This module defines alufn[3:0]_to_BOOLE[16] mux selected by 16bits inputs a and b
+module boole16 (
+    input alufn[4], //alufn[5:4] is the selector of mux used for alu16, so only the first 4 alufn digits are used    
+    input a[16],      
+    input b[16],       
+    output boole[16]   
+  ) {
+  var i;
+  
+  always {
+    for(i=0;i<=15;i++){
+      //for boole we compute bit by bit, the operation is encoded inside the mux
+      case(alufn[3:0]){
+        //Operation:
+        //  AND 1000
+        //  OR  1110
+        //  XOR 0110
+        //  "A" 1010
+        //  "B" 1100
+        b1000:boole[i] = a[i]&b[i];
+        b0110:boole[i] = a[i]^b[i];
+        b1010:boole[i] = a[i];
+        b1100:boole[i] = b[i];
+        b1110:boole[i] = a[i]|b[i];
+
+        default:boole[i] =16b0;
+    }
+}
+}
+}
+  

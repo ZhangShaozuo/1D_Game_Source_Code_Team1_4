@@ -1,0 +1,18 @@
+//The module defined the shifter operation
+module shift16 (
+    input alufn[4], 
+    input a[16], 
+    input b[5], //we need to make sure it is durable to shift 16bits, in binary digits is 10000
+                //so we need the lower-order 5 bits of the input b
+    output shift[16]
+  )
+{
+  always {
+    case ({alufn[1], alufn[0]}) {
+    {0,0} : shift=a<<b;
+    {0,1} : shift=a>>b;
+    {1,1} : shift=$signed(a)>>>b;
+    default: shift=a;
+    }
+  }
+  }

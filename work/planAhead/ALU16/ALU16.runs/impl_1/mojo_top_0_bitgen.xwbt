@@ -1,0 +1,8 @@
+INTSTYLE=pa
+INFILE=D:\Pillar Year\Term4\1930 ISTD - 50.002 Computation Structures\1D Project\Electronic Game Design Project\HARDMODE\1D game mojo(hard mode)\work\planAhead\ALU16\ALU16.runs\impl_1\mojo_top_0_routed.ncd
+OUTFILE=D:\Pillar Year\Term4\1930 ISTD - 50.002 Computation Structures\1D Project\Electronic Game Design Project\HARDMODE\1D game mojo(hard mode)\work\planAhead\ALU16\ALU16.runs\impl_1\mojo_top_0.bit
+FAMILY=Spartan6
+PART=xc6slx9-2tqg144
+WORKINGDIR=D:\Pillar Year\Term4\1930 ISTD - 50.002 Computation Structures\1D Project\Electronic Game Design Project\HARDMODE\1D game mojo(hard mode)\work\planAhead\ALU16\ALU16.runs\impl_1
+LICENSE=WebPack
+USER_INFO=211838011_0_0_336

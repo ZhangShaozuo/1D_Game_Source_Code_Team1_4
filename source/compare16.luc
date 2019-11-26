@@ -1,0 +1,34 @@
+//This module defines comparator that compare the value of a and b,
+//we don't need a and b directly, but z, v, n is enough
+module compare16 (
+    input alufn[4],    
+    input z,           
+    input v,           
+    input n,           
+    output cmp[16]     
+  ) {
+
+
+  sig lt;// signal represents less than           
+  sig eq;//... equal              
+  sig le;//... less than or equal
+  
+  always {
+
+    cmp = 16b0;
+    
+    eq = z; // signal eq can be computed by z.(if a-b=0, z would be 1, thus eq would be 1)
+    lt = (n ^ v); //signal less than is computed by XOR(n, v)
+    le = eq | lt;
+    
+    case(alufn[2:1]){
+      // ALUFN[2:1] are used to control the compare unit since we also need to control the
+      //adder/subtractor unit (i.e., ALUFN0 = 1 to force a subtract).
+      b01: cmp[0] = eq;
+      b10: cmp[0] = lt;
+      b11: cmp[0] = le;
+      default: cmp[0]=0;
+    }
+
+  }
+}

@@ -1,0 +1,88 @@
+module game_miniRegfiles (
+//the regfile for all game information
+    input clk,  // clock
+    input rst,  // reset
+    input wa[4], // write address
+    input we, // write enable
+    input data[16], // data in ; WD is the output of the ALU 
+    
+    input ra[4], //address port a 
+    input rb[4], //address prot b
+    output ra_out[16], //read port a
+    output rb_out[16], //read port b
+    output aout[16],
+    output nout[16],  //for debugging
+    output zout[16],
+    output p1_out[16], 
+    output p2_out[16]
+    
+  ) 
+  {
+  .clk(clk){
+    .rst(rst){
+      dff a[16];  //output led
+      dff n[16];  //number of leds left
+      dff x[16];  //value of button
+      dff z[16];  //checker 
+      dff p[16];  //player 
+      dff p1[16];  //point of player1
+      dff p2[16];  //point of player2
+      dff tp[16];  //temporary point 
+      dff m[16];  //current position inst 0th
+    }
+  }
+  
+
+  always {
+  
+    zout= z.q;
+    aout= a.q;
+    nout= n.q;
+    p1_out = p1.q;
+    p2_out = p2.q;
+    //write port
+    if (we){
+      case(wa){
+        b0000: a.d = data;
+        b0001: n.d = data;
+        b0010: x.d = data;
+        b0011: z.d = data;
+        b0100: p.d = data;
+        b0101: p1.d = data;
+        b0110: p2.d = data;
+        b0111: tp.d = data;  
+        b1000: m.d = data;
+      }
+    }
+    
+    //read port a
+    case(ra){
+        b0000 : ra_out = a.q;
+        b0001 : ra_out = n.q;
+        b0010 : ra_out = x.q;
+        b0011 : ra_out =z.q;  
+        b0100 : ra_out =p.q; 
+        b0101 : ra_out =p1.q; 
+        b0110 : ra_out =p2.q; 
+        b0111 : ra_out =tp.q; 
+        b1000 : ra_out = m.q;
+        
+        default : ra_out = 0;
+    }
+    
+ //read port a
+    case(rb){
+        b0000 : rb_out = a.q;
+        b0001 : rb_out = n.q;
+        b0010 : rb_out = x.q;
+        b0011 : rb_out =z.q; 
+        b0100 : rb_out =p.q; 
+        b0101 : rb_out =p1.q; 
+        b0110 : rb_out =p2.q; 
+        b0111 : rb_out =tp.q;  
+        b1000 : rb_out = m.q;       
+        default : rb_out = 0;
+    }
+    
+  }
+}

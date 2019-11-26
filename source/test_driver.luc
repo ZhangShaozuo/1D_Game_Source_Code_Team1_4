@@ -1,0 +1,76 @@
+// This file describes a test driver module.
+// The module outputs a case selector signal which feeds into a test case ROM.
+// The module outputs `pass=1` if all test cases are passed, 
+//   and immediately outputs `pass=0` and halts the testing when it encounters any failed case.
+// This is implemented using an FSM paired with a case counter register that
+//   increments by 1 every cycle until all cases are tested.
+// The module is parametrized with `SEL_MAX` which indicates the maximum index of the test cases.
+
+module test_driver #(SEL_MAX: SEL_MAX >= 0) (
+    // control signal ports
+    input clk,      // clock
+    input rst,      // reset
+    input start,    // signal to begin test
+    output done,    // whether testing has halted
+    output pass,    // whether all the test cases so far have passed; 0 if none tested
+    // test data ports
+    input alu_out[16],    // computed output
+    input ref_out[16],    // reference / expected output
+    output sel[$clog2(SEL_MAX)] // case selector signal, wired to case ROM
+  ) {
+  
+  .clk(clk), .rst(rst) {
+    // test case counter
+    dff sel_counter[$clog2(SEL_MAX)];  //perform ceiling of log2(n)
+    // FSM declaration
+    fsm state = {IDLE, TEST, PASS, FAIL};
+  }
+
+  always {
+    // wire all the outputs
+    sel = sel_counter.q;
+    case(state.q){
+      state.PASS: 
+        done = 1;
+        pass = 1;
+      state.FAIL: 
+        done = 1;
+        pass = 0;
+      state.TEST:
+        done = 0;
+        pass = 1;
+      default:
+        done = 0;
+        pass = 0;
+    }
+    // FSM wiring
+    case(state.q){
+      state.TEST:  // in TEST state
+        // increment counter every clock cycle
+        sel_counter.d = sel_counter.q + 1;
+        // state transition
+        case(alu_out == ref_out) {
+          1:  // test case passed
+            case(sel_counter.q == SEL_MAX) {
+              // all cases tested, transition to PASS
+              1: state.d = state.PASS;
+              // not all cases tested, remain in TEST
+              default: state.d = state.TEST;
+            }
+          default: // test case failed, transition to FAIL
+            state.d = state.FAIL;
+        }
+        
+      default:      // not in TEST state
+        case(start) {
+          1:        // start signal is 1, transition to TEST 
+            sel_counter.d = 0;
+            state.d = state.TEST;
+          default:  // start signal is 0, do nothing
+            sel_counter.d = sel_counter.q;
+            state.d = state.q;
+        }
+    }
+  }
+}
+

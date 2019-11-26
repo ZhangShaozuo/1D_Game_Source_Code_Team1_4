@@ -1,0 +1,145 @@
+// This file describes a ROM that stores all the test cases used in a tester.
+// The data in the ROM is described by the `CASES` lookup table.
+// `CASES` is defined in the following format:
+//     CASES[case_index][i]
+// where
+//   i = 3 gives the alufn (but zero-padded to 16 bits)
+//   i = 2 gives ALU `a` input
+//   i = 1 gives ALU `b` input
+//   i = 0 gives reference / expected output
+// In other words, `CASES` is defined as a table, with descending case index,
+//   and the columns are alufn, `a`, `b`, output, from left to right.
+
+module test_case_rom (
+    input sel[6],        // case index / selector input
+    output alufn[6],     // alufn output
+    output a[16],        // `a` output
+    output b[16],        // `b` output
+    output ref_out[16]   // reference / expected output
+  ) {
+
+  const CASES = {
+            /////////////////shifter//////////////
+            // case 53: shift arithmetic 2 by 1 to right
+            {16b100011, 16h0002, 16h0001, 16h0001},
+            // case 52: shift arithmetic 0 by 15 to right
+            {16b100011, 16h0000, 16h000F, 16h0000},
+            // case 51: shift arithmetic FFFF by 15 to right
+            {16b100011, 16hFFFF, 16h000F, 16hFFFF},
+            // case 50: shift 2 by 1 to right
+            {16b100001, 16h0002, 16h0001, 16h0001},  
+            // case 49: shift 0 by 15 to right
+            {16b100001, 16h0000, 16h000F, 16h0000},
+            // case 48: shift FFFF by 15 to right
+            {16b100001, 16hFFFF, 16h000F, 16h0001},  
+            // case 47: shift 1 by 1 to left
+            {16b100000, 16h0001, 16h0001, 16h0002},
+            // case 46: shift 0 by 16 to left
+            {16b100000, 16h0000, 16h0010, 16h0000},  
+            // case 45: shift FFFF by 16 to left
+            {16b100000, 16hFFFF, 16h0010, 16h0000},      
+             /////////COMPARE//////////////
+            // case 44: negative <= positive
+            {16b110111, 16hFFFF, 16h0001, 16h0001},
+            // case 43: negative < positive
+            {16b110101, 16hFFFF, 16h0001, 16h0001},
+            // case 42: negative = positive
+            {16b110011, 16hFFFF, 16h0001, 16h0000},
+            // case 41: negative <= zero
+            {16b110111, 16hFFFF, 16h0000, 16h0001},
+            // case 40: negative < zero
+            {16b110101, 16hFFFF, 16h0000, 16h0001},
+            // case 39: negative = zero
+            {16b110011, 16hFFFF, 16h0000, 16h0000},
+            // case 38: zero <= positive
+            {16b110111, 16h0000, 16h0001, 16h0001},
+            // case 37: zero < positive
+            {16b110101, 16h0000, 16h0001, 16h0001},
+            // case 36: zero = positive
+            {16b110011, 16h0000, 16h0001, 16h0000},
+            // case 35: FFFF <= FFFF
+            {16b110111, 16hFFFF, 16hFFFF, 16h0001},
+            // case 34: FFFF < FFFF
+            {16b110101, 16hFFFF, 16hFFFF, 16h0000},
+            // case 33: FFFF = FFFF
+            {16b110011, 16hFFFF, 16hFFFF, 16h0001},
+            
+            ///////////////Bitwise////////////
+            //32:Check that output = input a
+            {16b011010,16hFFFF,16hFFFF,16hFFFF},
+            //31:Check that output = input a
+            {16b011010,16h00F0,16hFF0F,16h00F0},
+            //30:Check that output = input a (LDR)
+            {16b011010,16hAAAA,16hBBBB,16hAAAA},
+            //29:00F0 XOR FF0F
+            {16b010110,16h00F0,16hFF0F,16hFFFF},
+            //28: Check that FFFF OR FFFF = FFFF
+            {16b011110,16hFFFF,16hFFFF,16hFFFF},
+            //27: Check that 00 OR 00 = 00
+            {16b011110,16h0000,16h0000,16h0000},
+            //26:00F0 OR FF0F
+            {16b011110,16h00F0,16hFF0F,16hFFFF},
+            //25:00F0 AND FF0F
+            {16b011000,16h00F0,16hFF0F,16h0000},
+            /////////MUL/////////////////////
+            //24: Positive * Negative, overflow
+            {16b000010,16hC000,16h4000,16h0000},
+            //23: Positive * Negative, no overflow
+            {16b000010,16h0002,16hFFFF,16hFFFE},
+            //22: Negative * Negative, no overflow
+            {16b000010,16hFFFE,16hFFFE,16h0004},
+            //21: Negative * Negative, overflow
+            {16b000010,16hC000,16hC000,16h0000},
+            //20: Positive * Positive, no overflow
+            {16b000010,16h0003,16h0003,16h0009},
+            //19: Positive * Positive, overflow
+            {16b000010,16h7FFF,16h0002,16hFFFE},
+            //18: 1 * anything
+            {16b000010,16h0001,16h0012,16h0012},
+            //17:-1 * -1
+            {16b000010,16hFFFF,16hFFFF,16h0001},
+            //case 16: 1 * 1
+            {16b000010,16h0001,16h0001,16h0001},
+            // case 15 Zero * Zero
+            {16b000010, 16h0000, 16h0000, 16h0000},
+            ////////////ADD SUB/////////////////////
+            // case 14: zero - zero
+            {16b000001, 16h0000, 16h0000, 16h0000},
+            // case 13: pos - neg, no overflow
+            {16b000001, 16h0001, 16hFFFF, 16h0002},
+            // case 12: neg - pos, no overflow
+            {16b000001, 16hFFFF, 16h0001, 16hFFFE},
+            // case 11: pos - neg, overflow
+            {16b000001, 16h7FFF, 16hFFFF, 16h8000},
+            // case 10: neg - pos, overflow
+            {16b000001, 16h8000, 16h0001, 16h7FFF},
+            // case 9: 20 - (-25)
+            {16b000001, 16h0014, 16hFFE7, 16h002D},
+            // case 8: pos - pos, never overflows
+            {16b000001, 16h0001, 16h0001, 16h0000},
+            // case 7: neg - neg, never overflows
+            {16b000001, 16hFFFF, 16hFFFF, 16h0000},
+            // case 6: pos + neg (never overflows)
+            {16b000000, 16h0001, 16hFFFF, 16h0000},
+            // case 5: pos + pos, overflow
+            {16b000000, 16h7FFF, 16h7FFF, 16hFFFE},
+            // case 4: neg + neg, overflow
+            {16b000000, 16h8000, 16h8000, 16h0000},
+            // case 3: pos + pos, no overflow
+            {16b000000, 16h0001, 16h0001, 16h0002},
+            // case 2: neg + neg, no overflow
+            {16b000000, 16hFFFF, 16hFFFF, 16hFFFE},
+            // case 1: 5 + 3
+            {16b000000, 16h0005, 16h0003, 16h0008},
+            // case 0: 0 + 0
+            {16b000000, 16h0000, 16h0000, 16h0000}
+ };
+
+  always {
+    // wire the lookup table output to ROM module output
+    alufn = CASES[sel][3][5:0];
+    a = CASES[sel][2];
+    b = CASES[sel][1];
+    ref_out = CASES[sel][0];
+  }
+}

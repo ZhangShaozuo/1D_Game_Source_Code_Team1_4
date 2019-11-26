@@ -1,0 +1,44 @@
+//To be exact, this module combines the adder and multiplier,
+//but multiply operator just needs one line, so the main part is the adder
+
+module adder16 (
+    input a[16],  //initialize two 16 signed inputs a and b  
+    input b[16],
+    input alufn[4], //alufn[5:4] is the selector of mux used for alu16, so only the first 4 alufn digits are used 
+    output out[16], //the output could be the result of addition, subtraction, multiplication, but they are all 16bits output.
+    output z, //if the output is 0, z=1;
+    output v, //v= 1 if addition or subtraction overflows
+    output n  //n=1 is S[31]=1;
+  ) {
+  
+  sig sum[16]; //sum[16], xb, and mp are intermediate signals
+  sig xb[16];  //xb stands for the results of XOR(b, alufn[0])
+  sig mp[16];  //mp stands for result of multiplier
+  sig div[16];
+
+  always {
+  case(alufn[0]){
+      1:sum = a-b; //if alufn[0]=1, we do the subtraction
+      xb=-b; //xb is merely the opposite b
+      default:
+      sum = a+b; //default is addition operation and xb=b
+      xb=b;
+  }
+  // equation to compute v  
+  v = (a[15] & xb[15] & ~sum[15]) + (~a[15] & ~xb[15] & sum[15]);
+  // NOR gate takes in all the sum result, only when all of them are none-0 can z be 0  
+  z=~(|sum);
+  n = sum[15];
+  mp = a*b;
+  div = a/b;
+    
+  case(alufn[1]){
+    1:out = mp; // if alufn[1]=1, out will be the result of multiply, the default operation is sum(add or subtract)
+    default:out = sum;
+  }
+  case(alufn[2]){
+    1:out = div; // if alufn[2]=1, out will be the result of divide, the default operation is sum(add or subtract)
+    default:out = sum;
+  }
+}
+}

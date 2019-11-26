@@ -1,0 +1,563 @@
+module game_CU (
+    input clk,  // clock
+    //input rst,  // reset
+    input button2,
+    input button3,
+    input button4,
+    input button1,
+    input button5,
+    input regfile_datain[16], //direct reading of regfile data from read_address_b
+    
+    output alufn[6],
+    output asel[2],
+    output bsel[3],
+    output wa[4],
+    output we[1],
+    output ra[4],
+    output rb[4]
+    
+  ) {
+
+  .clk(clk){
+    fsm game_fsm={
+      START,
+      START_1,
+      IDLE,
+      S1,
+      S2_1,
+      S3,
+      S3_1,
+      S4,
+      S4_1,
+      S4_2,
+      S5,
+      S6,
+      S6_1,
+      S7,
+      S7_1,
+      S8,
+      S8_1,
+      S9,
+      S9_1,
+      S10,
+      S10_1,
+      S11,
+      S11_1,
+      S12,
+      S12_1,
+      S_MUL,
+      S_MUL_1,
+      S_MUL_2,
+      S_MUL_P1,
+      S_MUL_P2,
+      S_ADD_10,
+      S_ADD_4,
+      S_ADD_2,
+      S_ADD_1,
+      S_ADD_1_1,
+      S_ADD_P1,
+      S_ADD_P2,
+      S_DIV,
+      S_DIV_1,
+      S_DIV_2,
+      S_DIV_P1,
+      S_DIV_P2,
+      S_P1_CHECK,
+      S_P1_CHECK_1,
+      S_SWITCH_P1,
+      S_P2_CHECK,
+      S_P2_CHECK_1,
+      S_SWITCH_P2,
+      WIN
+      };
+  }
+      
+      
+  
+  
+  
+ 
+  always {
+    alufn = b0;
+    asel = b00; 
+    bsel = b000;
+    wa = b1111;
+    we = b0;
+    ra = b0000;
+    rb = b0000;
+     if (button1){
+        game_fsm.d = game_fsm.START;
+    }
+    else{
+    case(game_fsm.q){
+      game_fsm.START: // this is for 
+        alufn = b011010; //A
+        asel = b01; //100000000000000
+        bsel = b000; //anything -->I noticed that even though bsel could be anything, it still should maintain 3bits
+        wa = b0000;  //a
+        we = b1;
+        rb = b0101; //anything
+        //if counter is set
+        if (button5){                      //direct read in
+          game_fsm.d = game_fsm.START_1;
+        }
+        else{
+          game_fsm.d =  game_fsm.START;
+        }        
+
+      game_fsm.START_1: // this is for initializing n
+        alufn = b011010; //A
+        asel = b10; //...01111
+        bsel = b000; //anything
+        wa = b0001; //n
+        we = b1;
+        rb = b0001; //anything
+        game_fsm.d = game_fsm.S1;    
+           
+         
+      game_fsm.S1:
+        alufn = b011100; //B (x <- input)
+        asel = b00; //anything
+        wa = b0010; //x
+        we = b1;
+        ra = b0000; //anything
+        if (button2){                      //direct read in
+          bsel = b001; //input
+          game_fsm.d = game_fsm.S3;      
+        }
+        else{
+        if (button3){                      //direct read in
+          bsel = b010; //input
+          game_fsm.d = game_fsm.S3;      
+        }
+            else{
+        if (button4){                      //direct read in
+          bsel = b011; //input
+          game_fsm.d = game_fsm.S3;      
+        }
+        else{
+          bsel = b000;  //what if bsel=111, don't know why should be b000
+          game_fsm.d = game_fsm.S1;
+          }
+        }
+     }
+
+  
+      game_fsm.S3: 
+        alufn = b110101;// CMPLT (n<x)
+        asel = b00; 
+        bsel = b000; // select the input , "0" from Rb , "1" from input;
+        wa = b0011;
+        we = b1;
+        ra = b0001;  //n
+        rb = b0010;  //x
+        game_fsm.d=game_fsm.S3_1;
+          
+          
+       
+      game_fsm.S3_1:
+        if (regfile_datain[0]){                 //if z is 1
+          game_fsm.d = game_fsm.S4;
+        }
+        else{
+          game_fsm.d =  game_fsm.S5;		//if z is 0
+        }  
+          
+        
+      game_fsm.S4:  //overflow
+        alufn = b000001;// SUB  x = x-n
+        asel = b00; //ra
+        bsel = b0000; // rb  select the input , "0" from Rb , "1" from input;
+        wa = b0010;  //x
+        we = b1;
+        ra = b0010;  //x
+        rb = b0001;  //n            
+        game_fsm.d = game_fsm.S4_1;
+          
+
+      game_fsm.S4_1: // this is for reset a
+        alufn = b011010; //A
+        asel = b01; //1000000000000000
+        bsel = b0000; //anything
+        wa = b0000;
+        we = b1;
+        rb = b0101; //anything
+        game_fsm.d = game_fsm.S4_2;
+          
+      game_fsm.S4_2: // this is for reset n
+        alufn = b011010; //A
+        asel = b10; 
+        bsel = b0000; //anything
+        wa = b0001; //n
+        we = b1;
+        rb = b0001; //anything
+        game_fsm.d = game_fsm.S5;  
+       
+      game_fsm.S5:
+        alufn = b100011;//SHRA(a,x,a)
+        asel = b00; 
+        bsel = b0000; // select the input , "0" from Rb , "1" from input;
+        wa = b0000; //a
+        we = b1;
+        ra = b0000; //a
+        rb = b0010; //x
+        game_fsm.d = game_fsm.S6;
+       
+      game_fsm.S6:
+        alufn = b000001;// SUB n-x
+        asel = b00; 
+        bsel = b0000; // select the input , "0" from Rb , "1" from input;
+        wa = b0001;  //n
+        we = b1;
+        ra = b0001;  //n
+        rb = b0010;  //x
+        game_fsm.d = game_fsm.S6_1;
+          
+     game_fsm.S6_1:
+        alufn = b000001; //SUB m = 15-n
+        asel = b10;  //15
+        bsel = b0000;
+        wa = b1000; //m
+        we = b1;
+        rb = b0001; //n
+        game_fsm.d = game_fsm.S7;
+          
+     game_fsm.S7:
+        alufn = b110011;// CMPEQ m==2
+        asel = b00; // ra
+        bsel = b0001; // 2  select the input , "0" from Rb , "1" from input;
+        wa = b0011; // z
+        we = b1;
+        ra = b1000; //m
+        game_fsm.d = game_fsm.S7_1;
+        
+      game_fsm.S7_1:
+        if (regfile_datain[0]){			//if z is 1             
+          game_fsm.d = game_fsm.S_MUL;
+        }
+        else{					//if z is 0
+          game_fsm.d =  game_fsm.S8;
+        }       
+
+     game_fsm.S8:
+        alufn = b110011;// CMPEQ m==15
+        asel = b00; // ra
+        bsel = b1011; // 15  select the input , "0" from Rb , "1" from input;
+        wa = b0011; // z
+        we = b1;
+        ra = b1000; //m
+        game_fsm.d = game_fsm.S8_1;
+        
+      game_fsm.S8_1:
+        if (regfile_datain[0]){			//if z is 1                   
+          game_fsm.d = game_fsm.S_ADD_10;
+        }
+        else{					//if z is 0
+          game_fsm.d =  game_fsm.S9;
+        }       
+
+     game_fsm.S9:
+        alufn = b110011;// CMPEQ m==11
+        asel = b00; // ra
+        bsel = b1001; // 11  select the input , "0" from Rb , "1" from input;
+        wa = b0011; // z
+        we = b1;
+        ra = b1000; //m
+        game_fsm.d = game_fsm.S9_1;
+        
+      game_fsm.S9_1:
+        if (regfile_datain[0]){			//if z is 1               
+          game_fsm.d = game_fsm.S_ADD_4;
+        }
+        else{					//if z is 0
+          game_fsm.d =  game_fsm.S10;
+        }
+          
+     game_fsm.S10:
+        alufn = b110011;// CMPEQ m==13
+        asel = b00; // ra
+        bsel = b1010; // 13  select the input , "0" from Rb , "1" from input;
+        wa = b0011; // z
+        we = b1;
+        ra = b1000; //m
+        game_fsm.d = game_fsm.S10_1;
+        
+      game_fsm.S10_1:
+        if (regfile_datain[0]){			//if z is 1                     
+          game_fsm.d = game_fsm.S_ADD_2;
+        }
+        else{					//if z is 0
+          game_fsm.d =  game_fsm.S11;
+        }  
+             
+     game_fsm.S11:
+        alufn = b110011;// CMPEQ m==6
+        asel = b00; // ra
+        bsel = b0111; // 6  select the input , "0" from Rb , "1" from input;
+        wa = b0011; // z
+        we = b1;
+        ra = b1000; //m
+        game_fsm.d = game_fsm.S11_1;
+        
+      game_fsm.S11_1:
+        if (regfile_datain[0]){			//if z is 1                      
+          game_fsm.d = game_fsm.S_ADD_2;
+        }
+        else{					//if z is 0
+          game_fsm.d =  game_fsm.S12;
+        } 
+          
+     game_fsm.S12:
+        alufn = b110011;// CMPEQ m==9
+        asel = b00; // ra
+        bsel = b0001; // 2  select the input , "0" from Rb , "1" from input;
+        wa = b1000; // z
+        we = b1;
+        ra = b1000; //m
+        game_fsm.d = game_fsm.S12_1;
+        
+      game_fsm.S12_1:
+        if (regfile_datain[0]){			//if z is 1                    
+          game_fsm.d = game_fsm.S_DIV;
+        }
+        else{					//if z is 0
+          game_fsm.d =  game_fsm.S1;
+        } 
+          
+      game_fsm.S_MUL: 
+        alufn = b011100; //B
+        asel = b00; // ra
+        bsel = b0001; // 2
+        wa = b0111; // tp
+        we = b1;
+        ra = b0000; // anything
+        game_fsm.d = game_fsm.S_MUL_1;        
+          
+     game_fsm.S_MUL_1:
+        alufn = b110011;// CMPEQ p == 1
+        asel = b00; // ra
+        bsel = b1100; // 0  select the input , "0" from Rb , "1" from input;
+        wa = b0011; // z
+        we = b1;
+        ra = b0100; //p
+        game_fsm.d = game_fsm.S_MUL_2;
+        
+      game_fsm.S_MUL_2:
+        if (regfile_datain[0]){			//if z=1                     
+          game_fsm.d = game_fsm.S_MUL_P1;
+        }
+        else{					//if z=0
+          game_fsm.d =  game_fsm.S_MUL_P2;
+        }
+          
+      game_fsm.S_MUL_P1:
+        alufn = 000010; // MUL p1*2=p1
+        asel = b00;  // ra
+        bsel = b0000; //rb
+        wa = b0101; // p1 
+        we = b1;
+        ra = b0101; //p1 
+        rb = b0111; //tp 
+        game_fsm.d = game_fsm.S_P1_CHECK;
+       
+      game_fsm.S_MUL_P2:
+        alufn = 000010; // MUL p2*tp=p2
+        asel = b00;  // ra
+        bsel = b0000; //rb
+        wa = b0110; // p2
+        we = b1;
+        ra = b0110; //p2
+        rb = b0111; //tp 
+        game_fsm.d = game_fsm.S_P2_CHECK;    
+          
+          
+      game_fsm.S_ADD_10: // tp=10
+        alufn = b011100; //B
+        asel = b00; // ra
+        bsel = b0100; // 10
+        wa = b0111; // tp
+        we = b1;
+        ra = b0000; // anything
+        game_fsm.d = game_fsm.S_ADD_1;    
+          
+          
+      game_fsm.S_ADD_4:// tp=10
+        alufn = b011100; //B
+        asel = b00; // ra
+        bsel = b0011; // 4
+        wa = b0111; // tp
+        we = b1;
+        ra = b0000; // anything
+        game_fsm.d = game_fsm.S_ADD_1;        
+          
+      game_fsm.S_ADD_2:// tp=10
+        alufn = b011100; //B
+        asel = b00; // ra
+        bsel = b0001; // 2
+        wa = b0111; // tp
+        we = b1;
+        ra = b0000; // anything
+        game_fsm.d = game_fsm.S_ADD_1;    
+          
+     game_fsm.S_ADD_1:
+        alufn = b110011;// CMPEQ p == 1
+        asel = b00; // ra
+        bsel = b1100; // 0  select the input , "0" from Rb , "1" from input;
+        wa = b0011; // z
+        we = b1;
+        ra = b0100; //p
+        game_fsm.d = game_fsm.S_ADD_1_1;
+        
+      game_fsm.S_ADD_1_1:
+        if (regfile_datain[0]){			//if z=1                    
+          game_fsm.d = game_fsm.S_ADD_P1;
+        }
+        else{					//if z=0
+          game_fsm.d =  game_fsm.S_ADD_P2;
+        }
+          
+      game_fsm.S_ADD_P1:
+        alufn = 000000; // ADD p1+tp=p1
+        asel = b00;  // ra
+        bsel = b0000; //rb
+        wa = b0101; // p1 
+        we = b1;
+        ra = b0101; //p1 
+        rb = b0111; //tp 
+        game_fsm.d = game_fsm.S_P1_CHECK;
+       
+      game_fsm.S_ADD_P2:
+        alufn = 000000; // MUL p2*tp=p2
+        asel = b00;  // ra
+        bsel = b0000; //rb
+        wa = b0110; // p2
+        we = b1;
+        ra = b0110; //p2
+        rb = b0111; //tp 
+        game_fsm.d = game_fsm.S_P2_CHECK;     
+          
+      game_fsm.S_DIV: // this is for initializing n
+        alufn = b011100; //B
+        asel = b00; // ra
+        bsel = b0001; // 2
+        wa = b0111; // tp
+        we = b1;
+        ra = b0000; // anything
+        game_fsm.d = game_fsm.S_DIV_1;        
+          
+     game_fsm.S_DIV_1:
+        alufn = b110011;// CMPEQ p == 1
+        asel = b00; // ra
+        bsel = b1100; // 0  select the input , "0" from Rb , "1" from input;
+        wa = b0011; // z
+        we = b1;
+        ra = b0100; //p
+        game_fsm.d = game_fsm.S_DIV_2;
+        
+      game_fsm.S_DIV_2:
+        if (regfile_datain[0]){                      //direct read in
+          game_fsm.d = game_fsm.S_DIV_P1;
+        }
+        else{
+          game_fsm.d =  game_fsm.S_DIV_P2;
+        }
+          
+      game_fsm.S_DIV_P1:
+        alufn = 000100; // MUL p1/tp=p1
+        asel = b00;  // ra
+        bsel = b0000; //rb
+        wa = b0101; // p1 
+        we = b1;
+        ra = b0101; //p1 
+        rb = b0111; //tp 
+        game_fsm.d = game_fsm.S_P1_CHECK;
+       
+      game_fsm.S_DIV_P2:
+        alufn = 000100; // MUL p2/tp=p2
+        asel = b00;  // ra
+        bsel = b0000; //rb
+        wa = b0110; // p2
+        we = b1;
+        ra = b0110; //p2
+        rb = b0111; //tp 
+        game_fsm.d = game_fsm.S_P2_CHECK; 
+          
+          
+      game_fsm.S_P1_CHECK: 
+        alufn = b110101;// CMPLT (n<40)
+        asel = b00; // ra
+        bsel = b1101; // 40 select the input , "0" from Rb , "1" from input;
+        wa = b0011;
+        we = b1;
+        ra = b0101;  //p1
+        game_fsm.d=game_fsm.S_P1_CHECK_1;  
+          
+      game_fsm.S_P1_CHECK_1:
+        if (regfile_datain[0]){			//if z=1                    
+          game_fsm.d = game_fsm.S_SWITCH_P1;
+        }
+        else{					//if z=0
+          game_fsm.d =  game_fsm.WIN;
+        } 
+          
+      game_fsm.S_SWITCH_P1:
+        alufn = b000000; // p+1=p        
+        asel = b00;  //ra
+        bsel = b0101; //1 
+        wa = b0100;  //p 
+        we= b1;
+        ra = b0100; //p 
+        game_fsm.d=game_fsm.S1; 
+          
+      game_fsm.S_P2_CHECK: 
+        alufn = b110101;// CMPLT (n<40)
+        asel = b00; // ra
+        bsel = b1101; // 40 select the input , "0" from Rb , "1" from input;
+        wa = b0011; //z
+        we = b1;
+        ra = b0110;  //p2
+        game_fsm.d=game_fsm.S_P2_CHECK_1;  
+          
+      game_fsm.S_P2_CHECK_1:
+        if (regfile_datain[0]){                      //direct read in
+          game_fsm.d = game_fsm.S_SWITCH_P2;
+        }
+        else{
+          game_fsm.d =  game_fsm.WIN;
+        }    
+          
+      game_fsm.S_SWITCH_P2:
+        alufn = b000001; // p-1=p        
+        asel = b00;  //ra
+        bsel = b0101; //1 
+        wa = b0100;  //p 
+        we= b1;
+        ra = b0100; //p 
+        game_fsm.d=game_fsm.S1; 
+                
+          
+             
+      game_fsm.WIN:
+        game_fsm.d = game_fsm.START;
+      }}}}
+        
+                  
+          
+       
+        
+        
+      
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+ 

@@ -1,0 +1,89 @@
+module game_miniBeta (
+    input clk,  // clock
+    input rst,  // reset
+    input button2,
+    input button3,
+    input button4,
+    input button1,
+    input button5,
+    
+    output outputled[16],
+    output outputn[16],
+    output outputp1[16],
+    output outputp2[16]
+
+  ) {
+
+  //temp variables
+  sig aluin_a[16];
+  sig aluin_b[16];
+  alu16 alu;
+
+  .clk(clk){
+    //edge_detector edge_detector_variableCounter (#RISE(1), #FALL(0));
+    //edge_detector game_timer_detector(#RISE(1), #FALL(0));
+    game_CU game_CU;//Here I move up game_CU from .rst(rst) because game_CU doesn't need rst
+    .rst(rst){
+      game_miniRegfiles game_Regfiles;
+
+    }
+  }
+  always {
+  
+    game_Regfiles.we = game_CU.we;
+    game_Regfiles.wa = game_CU.wa;
+    game_Regfiles.ra = game_CU.ra;
+    game_Regfiles.rb = game_CU.rb;
+  
+    game_CU.regfile_datain = game_Regfiles.zout;
+    
+    game_CU.button2 = button2;
+    game_CU.button3 = button3;
+    game_CU.button4 = button4;
+    game_CU.button1 = button1;
+    game_CU.button5 = button5;
+    
+    
+    
+    //asel mux
+    case(game_CU.asel){
+      b00  : aluin_a = game_Regfiles.ra_out;
+      b01  : aluin_a = b1000000000000000;
+      b10  : aluin_a = b0000000000001111; 
+      b11  : aluin_a = b0000000000000000; 
+      default :
+          aluin_a= 0;
+    }
+    
+    //bsel mux
+    case(game_CU.bsel){
+      b0000  : aluin_b = game_Regfiles.rb_out;
+      b0001  : aluin_b = 2;
+      b0010  : aluin_b = 3;
+      b0011  : aluin_b = 4;
+      b0100  : aluin_b = 10;
+      b0101  : aluin_b = 1;
+      b0111  : aluin_b = 6;
+      b1000  : aluin_b = 9;
+      b1001  : aluin_b = 11;
+      b1010  : aluin_b = 13;
+      b1011  : aluin_b = 15;
+      b1100  : aluin_b = 0;
+      b1101  : aluin_b = 40;
+
+      default :
+          aluin_b= 0;
+    }
+    
+    //ALU components
+    alu.a = aluin_a;
+    alu.b = aluin_b;
+    alu.alufn = game_CU.alufn;
+    
+    game_Regfiles.data = alu.alu;
+    outputled = game_Regfiles.aout;
+    outputn = game_Regfiles.nout;
+    outputp1 = game_Regfiles.p1_out;
+    outputp2 = game_Regfiles.p2_out;
+  }
+}

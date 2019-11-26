@@ -1,0 +1,33 @@
+// This file describes a 7-segment display quad multiplexer.
+// The multiplexer takes in 4 sets of 7-segment configuration,
+//   and outputs them one set at a time over a 65536-cycle period.
+// The corresponding digit selector signal is also outputted.
+
+module sevseg4 (
+    input clk,  // clock
+    input rst,  // reset
+    input segs_array[4][8],    // 4 sets of 7-segment configuration
+    output segs[8],            // output connected to the configuration input of a 7-segment display
+    output sel[4]              // output connected to the digit selector input of a 7-segment display
+  ) {
+  
+  .clk(clk), .rst(rst) {
+    // registers to produce a period of 65536 clock cycles
+    dff phase[16];
+  }
+  
+  // binary-to-1hot decoder
+  decoder phase_to_sel(#WIDTH(2));
+  
+  always {
+    // increment phase register by 1 every cycle
+    phase.d = phase.q + 1;
+    
+    // output the digit selector signal
+    phase_to_sel.in = phase.q[15:14];
+    sel = phase_to_sel.out;
+    
+    // output the selected digit configuration
+    segs = segs_array[phase.q[15:14]];
+  }
+}

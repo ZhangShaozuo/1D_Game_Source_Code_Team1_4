@@ -1,0 +1,224 @@
+module backupCU (
+    input clk,  // clock
+    input rst,  // reset
+    input button2,
+    input button3,
+    input button4,
+    input button1,
+    input button5,
+    input regfile_datain[16], //direct reading of regfile data from read_address_b
+    
+    output alufn[6],
+    output asel[2],
+    output bsel[2],
+    output wa[4],
+    output we[1],
+    output ra[4],
+    output rb[4]
+    
+  ) {
+
+  .clk(clk){
+    fsm game_fsm={
+      START,
+      START_1,
+      IDLE,
+      S1,
+      S2,
+      S2_1,
+      S3,
+      S3_1,
+      S4,
+      S4_1,
+      S4_2,
+      S5,
+      S6,
+      WIN
+      };
+  }
+      
+      
+  
+  
+  
+ 
+  always {
+    alufn = b0;
+    asel = b00; 
+    bsel = b00;
+    wa = b1111;
+    we = b0;
+    ra = b0000;
+    rb = b0000;
+     if (button1){
+        game_fsm.d = game_fsm.START;
+    }
+    else{
+    case(game_fsm.q){
+      game_fsm.START: // this is for 
+        alufn = b011010; //A
+        asel = b01; //100000000000000
+        bsel = b00; //anything
+        wa = b0000;  //a
+        we = b1;
+        rb = b0101; //anything
+        //if counter is set
+        if (button5){                      //direct read in
+          game_fsm.d = game_fsm.START_1;
+        }
+        else{
+          game_fsm.d =  game_fsm.START;
+        }        
+
+      game_fsm.START_1: // this is for initializing n
+        alufn = b011010; //A
+        asel = b10; //...01111
+        bsel = b00; //anything
+        wa = b0001; //n
+        we = b1;
+        rb = b0001; //anything
+        game_fsm.d = game_fsm.S1;    
+           
+         
+      game_fsm.S1:
+        alufn = b011100; //B (x <- input)
+        asel = b00; //anything
+        wa = b0010; //x
+        we = b1;
+        ra = b0000; //anything
+        if (button2){                      //direct read in
+          bsel = b01; //input
+          game_fsm.d = game_fsm.S2;      
+        }
+        else{
+        if (button3){                      //direct read in
+          bsel = b10; //input
+          game_fsm.d = game_fsm.S2;      
+        }
+            else{
+        if (button4){                      //direct read in
+          bsel = b11; //input
+          game_fsm.d = game_fsm.S2;      
+        }
+        else{
+          bsel = b00;
+          game_fsm.d = game_fsm.S1;
+          }
+        }
+     }
+
+ 
+        
+     game_fsm.S2:
+        alufn = b110011;// CMPEQ x==n
+        asel = b00; //ra
+        bsel = b00; // rb  select the input , "0" from Rb , "1" from input;
+        wa = b0011; // z
+        we = b1;
+        ra = b0001; //n
+        rb = b0010; //x
+        game_fsm.d = game_fsm.S2_1;
+          
+          
+      game_fsm.S2_1:
+        if (regfile_datain[0]){                      //direct read in
+          game_fsm.d = game_fsm.WIN;
+        }
+        else{
+          game_fsm.d =  game_fsm.S3;
+        }
+              
+      game_fsm.S3: 
+        alufn = b110101;// CMPLT (n<x)
+        asel = b00; 
+        bsel = b00; // select the input , "0" from Rb , "1" from input;
+        wa = b0011;
+        we = b1;
+        ra = b0001;  //n
+        rb = b0010;  //x
+        game_fsm.d=game_fsm.S3_1;
+          
+          
+       
+      game_fsm.S3_1:
+        if (regfile_datain[0]){                      //direct read in
+          game_fsm.d = game_fsm.S4;
+        }
+        else{
+          game_fsm.d =  game_fsm.S5;
+        }  
+          
+        
+      game_fsm.S4:  //after overflow
+        alufn = b000001;// SUB  x-n
+        asel = b00; //ra
+        bsel = b00; // rb  select the input , "0" from Rb , "1" from input;
+        wa = b0010;  //x
+        we = b1;
+        ra = b0010;  //x
+        rb = b0001;  //n            
+        game_fsm.d = game_fsm.S4_1;
+          
+
+      game_fsm.S4_1: // this is for reset a
+        alufn = b011010; //A
+        asel = b01; //1000000000000000
+        bsel = b00; //anything
+        wa = b0000;
+        we = b1;
+        rb = b0101; //anything
+        game_fsm.d = game_fsm.S4_2;
+          
+      game_fsm.S4_2: // this is for reset n
+        alufn = b011010; //A
+        asel = b10; 
+        bsel = b00; //anything
+        wa = b0001; //n
+        we = b1;
+        rb = b0001; //anything
+        game_fsm.d = game_fsm.S5;  
+       
+      game_fsm.S5:
+        alufn = b100011;//SHRA(a,x,a)
+        asel = b00; 
+        bsel = b00; // select the input , "0" from Rb , "1" from input;
+        wa = b0000; //a
+        we = b1;
+        ra = b0000; //a
+        rb = b0010; //x
+        game_fsm.d = game_fsm.S6;
+       
+      game_fsm.S6:
+        alufn = b000001;// SUB n-x
+        asel = b00; 
+        bsel = b00; // select the input , "0" from Rb , "1" from input;
+        wa = b0001;  //n
+        we = b1;
+        ra = b0001;  //n
+        rb = b0010;  //x
+        game_fsm.d = game_fsm.S1;
+          
+      game_fsm.WIN:
+        game_fsm.d = game_fsm.START;
+      }}}}
+        
+                  
+          
+       
+        
+        
+      
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+ 
