@@ -1,0 +1,20 @@
+module mode_util
+
+  //convert m signal(mode info) for led signal
+   (
+    input clk,  // clock
+    input rst,
+    input m[2],  //mode input from regfile
+    output mode[2]
+  ) {
+
+  always {
+  case(m){
+    b01: mode[0] =b1;
+    mode [1] = b0;
+    b10: mode[0] = b0;
+    mode [1] = b1;
+    default: mode=b00;
+  }
+}
+}

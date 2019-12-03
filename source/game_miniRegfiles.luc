@@ -1,5 +1,7 @@
-module game_miniRegfiles (
-//the regfile for all game information
+module game_miniRegfiles 
+
+  //the regfile for all game information
+  (
     input clk,  // clock
     input rst,  // reset
     input wa[4], // write address
@@ -10,11 +12,15 @@ module game_miniRegfiles (
     input rb[4], //address prot b
     output ra_out[16], //read port a
     output rb_out[16], //read port b
-    output aout[16],
+    output aout[16],   //main led output
+    output zout[16],   //z output
     output nout[16],  //for debugging
-    output zout[16],
-    output p1_out[16], 
-    output p2_out[16]
+    output p1_out[16], //p1 score output
+    output p2_out[16], //p2 score output
+    output pout[16],   //p output (turn info)
+    output mout[16]    //m output (mode info)
+
+
     
   ) 
   {
@@ -28,17 +34,18 @@ module game_miniRegfiles (
       dff p1[16];  //point of player1
       dff p2[16];  //point of player2
       dff tp[16];  //temporary point 
-      dff m[16];  //current position inst 0th
+      dff m[16];  //mode
     }
   }
   
 
   always {
-  
-    zout= z.q;
+    mout= m.q; // output signals connected with registors
+    pout= p.q;
     aout= a.q;
     nout= n.q;
-    p1_out = p1.q;
+    zout= z.q;
+    p1_out = p1.q; 
     p2_out = p2.q;
     //write port
     if (we){
@@ -83,6 +90,9 @@ module game_miniRegfiles (
         b1000 : rb_out = m.q;       
         default : rb_out = 0;
     }
+        
+    
+    
     
   }
 }

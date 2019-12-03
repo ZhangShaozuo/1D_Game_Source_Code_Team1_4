@@ -15,7 +15,9 @@ module game_miniBeta_1 (
     output reg [15:0] outputled,
     output reg [15:0] outputn,
     output reg [15:0] outputp1,
-    output reg [15:0] outputp2
+    output reg [15:0] outputp2,
+    output reg [15:0] outputp,
+    output reg [15:0] outputm
   );
   
   
@@ -31,7 +33,7 @@ module game_miniBeta_1 (
   reg [6-1:0] M_alu_alufn;
   reg [16-1:0] M_alu_a;
   reg [16-1:0] M_alu_b;
-  alu16_13 alu (
+  alu16_17 alu (
     .alufn(M_alu_alufn),
     .a(M_alu_a),
     .b(M_alu_b),
@@ -43,7 +45,7 @@ module game_miniBeta_1 (
   
   wire [6-1:0] M_game_CU_alufn;
   wire [2-1:0] M_game_CU_asel;
-  wire [3-1:0] M_game_CU_bsel;
+  wire [4-1:0] M_game_CU_bsel;
   wire [4-1:0] M_game_CU_wa;
   wire [1-1:0] M_game_CU_we;
   wire [4-1:0] M_game_CU_ra;
@@ -54,15 +56,16 @@ module game_miniBeta_1 (
   reg [1-1:0] M_game_CU_button1;
   reg [1-1:0] M_game_CU_button5;
   reg [16-1:0] M_game_CU_regfile_datain;
-  game_CU_14 game_CU (
+  reg [16-1:0] M_game_CU_regfile_datain2;
+  game_CU_18 game_CU (
     .clk(clk),
-    .rst(rst),
     .button2(M_game_CU_button2),
     .button3(M_game_CU_button3),
     .button4(M_game_CU_button4),
     .button1(M_game_CU_button1),
     .button5(M_game_CU_button5),
     .regfile_datain(M_game_CU_regfile_datain),
+    .regfile_datain2(M_game_CU_regfile_datain2),
     .alufn(M_game_CU_alufn),
     .asel(M_game_CU_asel),
     .bsel(M_game_CU_bsel),
@@ -78,12 +81,14 @@ module game_miniBeta_1 (
   wire [16-1:0] M_game_Regfiles_zout;
   wire [16-1:0] M_game_Regfiles_p1_out;
   wire [16-1:0] M_game_Regfiles_p2_out;
+  wire [16-1:0] M_game_Regfiles_pout;
+  wire [16-1:0] M_game_Regfiles_mout;
   reg [4-1:0] M_game_Regfiles_wa;
   reg [1-1:0] M_game_Regfiles_we;
   reg [16-1:0] M_game_Regfiles_data;
   reg [4-1:0] M_game_Regfiles_ra;
   reg [4-1:0] M_game_Regfiles_rb;
-  game_miniRegfiles_15 game_Regfiles (
+  game_miniRegfiles_19 game_Regfiles (
     .clk(clk),
     .rst(rst),
     .wa(M_game_Regfiles_wa),
@@ -97,7 +102,9 @@ module game_miniBeta_1 (
     .nout(M_game_Regfiles_nout),
     .zout(M_game_Regfiles_zout),
     .p1_out(M_game_Regfiles_p1_out),
-    .p2_out(M_game_Regfiles_p2_out)
+    .p2_out(M_game_Regfiles_p2_out),
+    .pout(M_game_Regfiles_pout),
+    .mout(M_game_Regfiles_mout)
   );
   
   always @* begin
@@ -106,6 +113,7 @@ module game_miniBeta_1 (
     M_game_Regfiles_ra = M_game_CU_ra;
     M_game_Regfiles_rb = M_game_CU_rb;
     M_game_CU_regfile_datain = M_game_Regfiles_zout;
+    M_game_CU_regfile_datain2 = M_game_Regfiles_pout;
     M_game_CU_button2 = button2;
     M_game_CU_button3 = button3;
     M_game_CU_button4 = button4;
@@ -120,10 +128,10 @@ module game_miniBeta_1 (
         aluin_a = 16'h8000;
       end
       2'h2: begin
-        aluin_a = 16'h000f;
+        aluin_a = 4'hf;
       end
       2'h3: begin
-        aluin_a = 16'h0000;
+        aluin_a = 7'h42;
       end
       default: begin
         aluin_a = 1'h0;
@@ -170,6 +178,12 @@ module game_miniBeta_1 (
       4'hd: begin
         aluin_b = 6'h28;
       end
+      4'he: begin
+        aluin_b = 1'h1;
+      end
+      4'hf: begin
+        aluin_b = 16'hffff;
+      end
       default: begin
         aluin_b = 1'h0;
       end
@@ -182,5 +196,7 @@ module game_miniBeta_1 (
     outputn = M_game_Regfiles_nout;
     outputp1 = M_game_Regfiles_p1_out;
     outputp2 = M_game_Regfiles_p2_out;
+    outputp = M_game_Regfiles_pout;
+    outputm = M_game_Regfiles_mout;
   end
 endmodule

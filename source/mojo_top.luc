@@ -1,42 +1,84 @@
-module mojo_top (
+module mojo_top
+
+  //controlling all output signals
+   (
     input clk,              // 50MHz clock
     input rst_n,            // reset button (active low)
-    output led [8],         // 8 user controllable LEDs
-    input cclk,             // configuration clock, AVR ready when high
+    output led [8],         // 8 user controllable LEDs    
     output spi_miso,        // AVR SPI MISO
-    input spi_ss,           // AVR SPI Slave Select
-    input spi_mosi,         // AVR SPI MOSI
-    input spi_sck,          // AVR SPI Clock
     output spi_channel [4], // AVR general purpose pins (used by default to select ADC channel)
-    input avr_tx,           // AVR TX (FPGA RX)
     output avr_rx,          // AVR RX (FPGA TX)
-    input avr_rx_busy,      // AVR RX buffer full
-    output io_led [3][8],   // LEDs on IO Shield
-    output io_seg [8],      // 7-segment LEDs on IO Shield
-    output io_sel [4],      // Digit select on IO Shield
-    input io_button [5],    // 5 buttons on IO Shield
-    input io_dip [3][8]     // DIP switches on IO Shield
+    input buttonone,    // button inputs
+    input buttontwo,
+    input buttonthree,
+    input buttonfour,
+    input buttonfive,
+    output led1,       // main led outputs
+    output led2,
+    output led3,
+    output led4,
+    output led5,
+    output led6,
+    output led7,
+    output led8,
+    output led9,
+    output led10,
+    output led11,
+    output led12,
+    output led13,
+    output led14,
+    output led15,
+    output led16,
+    output p1b1seg1,  // output of four seven segments
+    output p1b1seg2,
+    output p1b1seg3,
+    output p1b1seg4,
+    output p1b1seg5,
+    output p1b1seg6,
+    output p1b1seg7,    
+
+    output p1b2seg1,
+    output p1b2seg2,
+    output p1b2seg3,
+    output p1b2seg4,
+    output p1b2seg5,
+    output p1b2seg6,
+    output p1b2seg7,
+    
+    output p2b1seg1,
+    output p2b1seg2,
+    output p2b1seg3,
+    output p2b1seg4,
+    output p2b1seg5,
+    output p2b1seg6,
+    output p2b1seg7,
+    output p2b2seg1,
+    output p2b2seg2,
+    output p2b2seg3,
+    output p2b2seg4,
+    output p2b2seg5,
+    output p2b2seg6,
+    output p2b2seg7,
+    output turn_p[2],  // turn info led signals
+    output modeout[2]  // mode info led signals
+     
   ) {
   
-  sig rst;                  // reset signal
-
+  sig rst;
   
-  //ALU fsm tester
-  //sig a[16];
-  //sig b[16];
-  //sig alufn_signal[6];
-  //alu alu_unit;
-  //alu_tester tester_unit;
   
  
   
   .clk(clk) {
-    // The reset conditioner is used to synchronize the reset signal to the FPGA
-    // clock. This ensures the entire FPGA comes out of reset at the same time.
     .rst(rst){
-      
+      //using files
       game_miniBeta gameMachine;
+      display displayp1;
+      display displayp2;
+      turn_util turn;
+      mode_util mode;
     }
+    //for button configuration
     
     reset_conditioner reset_cond;
 
@@ -47,11 +89,11 @@ module mojo_top (
     edge_detector edge_dt_btn_p5(#RISE(1), #FALL(0));
     
 
-    button_conditioner btn_cond_p1;
-    button_conditioner btn_cond_p2;
-    button_conditioner btn_cond_p3;
-    button_conditioner btn_cond_p4;
-    button_conditioner btn_cond_p5;
+    button_conditioner buttonone1;
+    button_conditioner buttontwo2;
+    button_conditioner buttonthree3;
+    button_conditioner buttonfour4;
+    button_conditioner buttonfive5;
     
 
   }
@@ -65,54 +107,95 @@ module mojo_top (
     spi_channel = bzzzz;    // not using flags
     avr_rx = bz;            // not using serial port
     
-    //set all to zero
-    io_led = 3x{{8h00}};    // turn LEDs off, using duplications
-    io_seg = 8hff;          // turn segments off, setting to all 1 will turn it off
-    io_sel = 4hf;           // select no digits
 
-    btn_cond_p1.in=io_button[0]; //to reduce the bouncing effects of your button 
-    btn_cond_p2.in=io_button[1];
-    btn_cond_p3.in=io_button[2];
-    btn_cond_p4.in=io_button[3];
-    btn_cond_p5.in=io_button[4];
-    edge_dt_btn_p1.in=btn_cond_p1.out; //get the edge of button press
-    edge_dt_btn_p2.in=btn_cond_p2.out;
-    edge_dt_btn_p3.in=btn_cond_p3.out;
-    edge_dt_btn_p4.in=btn_cond_p4.out;
-    edge_dt_btn_p5.in=btn_cond_p5.out;
+    buttonone1.in=buttonone; //to reduce the bouncing effects of your button 
+    buttontwo2.in=buttontwo;
+    buttonthree3.in=buttonthree;
+    buttonfour4.in=buttonfour;
+    buttonfive5.in=buttonfive;
+    edge_dt_btn_p1.in=buttonone1.out; //get the edge of button press
+    edge_dt_btn_p2.in=buttontwo2.out;
+    edge_dt_btn_p3.in=buttonthree3.out;
+    edge_dt_btn_p4.in=buttonfour4.out;
+    edge_dt_btn_p5.in=buttonfive5.out;
     
     gameMachine.button1=edge_dt_btn_p1.out;
     gameMachine.button2=edge_dt_btn_p2.out;
     gameMachine.button3=edge_dt_btn_p3.out;
     gameMachine.button4=edge_dt_btn_p4.out;
     gameMachine.button5=edge_dt_btn_p5.out;
-    
+
     //show the counter value at led   
+    led1 = gameMachine.outputled[0];
+    led2 = gameMachine.outputled[1];    
+    led3 = gameMachine.outputled[2];
+    led4 = gameMachine.outputled[3];    
+    led5 = gameMachine.outputled[4];
+    led6 = gameMachine.outputled[5];    
+    led7 = gameMachine.outputled[6];
+    led8 = gameMachine.outputled[7];    
+    led9 = gameMachine.outputled[8];
+    led10 = gameMachine.outputled[9];    
+    led11 = gameMachine.outputled[10];
+    led12 = gameMachine.outputled[11];    
+    led13 = gameMachine.outputled[12];
+    led14 = gameMachine.outputled[13];    
+    led15 = gameMachine.outputled[14];
+    led16 = gameMachine.outputled[15];
+    
+    
+    //connecting score output with display function
+    displayp1.score=gameMachine.outputp1;
+    displayp2.score=gameMachine.outputp2;
+    
+    //seven segments configuration
+    
+    p1b1seg1=displayp2.seg[13];
+    p1b1seg2=displayp2.seg[12];
+    p1b1seg3=displayp2.seg[11];
+    p1b1seg4=displayp2.seg[10];
+    p1b1seg5=displayp2.seg[9];
+    p1b1seg6=displayp2.seg[8];
+    p1b1seg7=displayp2.seg[7];
+    
+    p1b2seg1=displayp1.seg[6];
+    p1b2seg2=displayp1.seg[5];
+    p1b2seg3=displayp1.seg[4];
+    p1b2seg4=displayp1.seg[3];
+    p1b2seg5=displayp1.seg[2];
+    p1b2seg6=displayp1.seg[1];
+    p1b2seg7=displayp1.seg[0];
 
-    io_led[0] = gameMachine.outputled[7:0];    
-    io_led[1] = gameMachine.outputled[15:8];
-    io_led[2] = gameMachine.outputp1[7:0]; //for debug
-    //io_led[2][7:4] = gameMachine.outputp2[3:0]; //for debug
+    p2b1seg1=displayp2.seg[13];
+    p2b1seg2=displayp2.seg[12];
+    p2b1seg3=displayp2.seg[11];
+    p2b1seg4=displayp2.seg[10];
+    p2b1seg5=displayp2.seg[9];
+    p2b1seg6=displayp2.seg[8];
+    p2b1seg7=displayp2.seg[7];
+ 
+    p2b2seg1=displayp2.seg[6];
+    p2b2seg2=displayp2.seg[5];
+    p2b2seg3=displayp2.seg[4];
+    p2b2seg4=displayp2.seg[3];
+    p2b2seg5=displayp2.seg[2];
+    p2b2seg6=displayp2.seg[1];
+    p2b2seg7=displayp2.seg[0];
     
+    //turn info
+    
+    turn.p = gameMachine.outputp[0];
+    turn_p[0] = turn.turn[0];
+    turn_p[1] = turn.turn[1];
+    
+    //mode info
+    
+    mode.m = gameMachine.outputm[1:0];
+    modeout[0] = mode.mode[0];
+    modeout[1] = mode.mode[1];
 
+   
     
-    // ALU FSM tester
-//   alufn_signal = io_dip[2][5:0];
-//   a[7:0] = io_dip[0];
-//   a[15:8] = 8b0;
-//   b[15:8] = 8b0;
-//   b[7:0] = io_dip[1];
-//    tester_unit.clk = slowclock.value;
-//    tester_unit.reset = rst;
-    
-//    alu_unit.a = a;
-//    alu_unit.b = b;
-//    alu_unit.alufn_signal = tester_unit.out;
-    
- //   io_led[0] = a;
- //   io_led[1] = b;
- //   io_led[2] = alu_unit.out; //the output of the ALU
-
-    
+   
   }
 }

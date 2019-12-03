@@ -11,10 +11,10 @@ module adder16 (
     output n  //n=1 is S[31]=1;
   ) {
   
-  sig sum[16]; //sum[16], xb, and mp are intermediate signals
+  sig sum[16]; //sum[16], xb, mp, div are intermediate signals
   sig xb[16];  //xb stands for the results of XOR(b, alufn[0])
   sig mp[16];  //mp stands for result of multiplier
-  sig div[16];
+  sig div[16]; //div stands for result of divider
 
   always {
   case(alufn[0]){
@@ -30,14 +30,11 @@ module adder16 (
   z=~(|sum);
   n = sum[15];
   mp = a*b;
-  div = a/b;
-    
-  case(alufn[1]){
-    1:out = mp; // if alufn[1]=1, out will be the result of multiply, the default operation is sum(add or subtract)
-    default:out = sum;
-  }
-  case(alufn[2]){
-    1:out = div; // if alufn[2]=1, out will be the result of divide, the default operation is sum(add or subtract)
+  div = a/b;    
+  case(c{alufn[2],alufn[1]}){
+    b01:out = mp; // if alufn[1]=1, out will be the result of multiply, the default operation is sum(add or subtract)
+    b10:out = div;
+    //b10:out = div; // if alufn[2]=1, out will be the result of divide, the default operation is sum(add or subtract)
     default:out = sum;
   }
 }

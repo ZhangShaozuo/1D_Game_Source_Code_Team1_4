@@ -1,0 +1,15 @@
+module sevseg (
+    input clk,  // clock
+    input rst,  // reset
+    output out,
+    input p1score[16],
+    input p2score[16],
+
+    
+
+  ) {
+
+  always {
+    out = 0;
+  }
+}

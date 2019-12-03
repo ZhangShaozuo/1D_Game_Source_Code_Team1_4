@@ -8,20 +8,60 @@ module mojo_top_0 (
     input clk,
     input rst_n,
     output reg [7:0] led,
-    input cclk,
     output reg spi_miso,
-    input spi_ss,
-    input spi_mosi,
-    input spi_sck,
     output reg [3:0] spi_channel,
-    input avr_tx,
     output reg avr_rx,
-    input avr_rx_busy,
-    output reg [23:0] io_led,
-    output reg [7:0] io_seg,
-    output reg [3:0] io_sel,
-    input [4:0] io_button,
-    input [23:0] io_dip
+    input buttonone,
+    input buttontwo,
+    input buttonthree,
+    input buttonfour,
+    input buttonfive,
+    output reg led1,
+    output reg led2,
+    output reg led3,
+    output reg led4,
+    output reg led5,
+    output reg led6,
+    output reg led7,
+    output reg led8,
+    output reg led9,
+    output reg led10,
+    output reg led11,
+    output reg led12,
+    output reg led13,
+    output reg led14,
+    output reg led15,
+    output reg led16,
+    output reg p1b1seg1,
+    output reg p1b1seg2,
+    output reg p1b1seg3,
+    output reg p1b1seg4,
+    output reg p1b1seg5,
+    output reg p1b1seg6,
+    output reg p1b1seg7,
+    output reg p1b2seg1,
+    output reg p1b2seg2,
+    output reg p1b2seg3,
+    output reg p1b2seg4,
+    output reg p1b2seg5,
+    output reg p1b2seg6,
+    output reg p1b2seg7,
+    output reg p2b1seg1,
+    output reg p2b1seg2,
+    output reg p2b1seg3,
+    output reg p2b1seg4,
+    output reg p2b1seg5,
+    output reg p2b1seg6,
+    output reg p2b1seg7,
+    output reg p2b2seg1,
+    output reg p2b2seg2,
+    output reg p2b2seg3,
+    output reg p2b2seg4,
+    output reg p2b2seg5,
+    output reg p2b2seg6,
+    output reg p2b2seg7,
+    output reg [1:0] turn_p,
+    output reg [1:0] modeout
   );
   
   
@@ -32,6 +72,8 @@ module mojo_top_0 (
   wire [16-1:0] M_gameMachine_outputn;
   wire [16-1:0] M_gameMachine_outputp1;
   wire [16-1:0] M_gameMachine_outputp2;
+  wire [16-1:0] M_gameMachine_outputp;
+  wire [16-1:0] M_gameMachine_outputm;
   reg [1-1:0] M_gameMachine_button2;
   reg [1-1:0] M_gameMachine_button3;
   reg [1-1:0] M_gameMachine_button4;
@@ -48,84 +90,118 @@ module mojo_top_0 (
     .outputled(M_gameMachine_outputled),
     .outputn(M_gameMachine_outputn),
     .outputp1(M_gameMachine_outputp1),
-    .outputp2(M_gameMachine_outputp2)
+    .outputp2(M_gameMachine_outputp2),
+    .outputp(M_gameMachine_outputp),
+    .outputm(M_gameMachine_outputm)
+  );
+  wire [14-1:0] M_displayp1_seg;
+  reg [16-1:0] M_displayp1_score;
+  display_2 displayp1 (
+    .clk(clk),
+    .rst(rst),
+    .score(M_displayp1_score),
+    .seg(M_displayp1_seg)
+  );
+  wire [14-1:0] M_displayp2_seg;
+  reg [16-1:0] M_displayp2_score;
+  display_2 displayp2 (
+    .clk(clk),
+    .rst(rst),
+    .score(M_displayp2_score),
+    .seg(M_displayp2_seg)
+  );
+  wire [2-1:0] M_turn_turn;
+  reg [1-1:0] M_turn_p;
+  turn_util_4 turn (
+    .clk(clk),
+    .rst(rst),
+    .p(M_turn_p),
+    .turn(M_turn_turn)
+  );
+  wire [2-1:0] M_mode_mode;
+  reg [2-1:0] M_mode_m;
+  mode_util_5 mode (
+    .clk(clk),
+    .rst(rst),
+    .m(M_mode_m),
+    .mode(M_mode_mode)
   );
   wire [1-1:0] M_reset_cond_out;
   reg [1-1:0] M_reset_cond_in;
-  reset_conditioner_2 reset_cond (
+  reset_conditioner_6 reset_cond (
     .clk(clk),
     .in(M_reset_cond_in),
     .out(M_reset_cond_out)
   );
   wire [1-1:0] M_edge_dt_btn_p1_out;
   reg [1-1:0] M_edge_dt_btn_p1_in;
-  edge_detector_3 edge_dt_btn_p1 (
+  edge_detector_7 edge_dt_btn_p1 (
     .clk(clk),
     .in(M_edge_dt_btn_p1_in),
     .out(M_edge_dt_btn_p1_out)
   );
   wire [1-1:0] M_edge_dt_btn_p2_out;
   reg [1-1:0] M_edge_dt_btn_p2_in;
-  edge_detector_3 edge_dt_btn_p2 (
+  edge_detector_7 edge_dt_btn_p2 (
     .clk(clk),
     .in(M_edge_dt_btn_p2_in),
     .out(M_edge_dt_btn_p2_out)
   );
   wire [1-1:0] M_edge_dt_btn_p3_out;
   reg [1-1:0] M_edge_dt_btn_p3_in;
-  edge_detector_3 edge_dt_btn_p3 (
+  edge_detector_7 edge_dt_btn_p3 (
     .clk(clk),
     .in(M_edge_dt_btn_p3_in),
     .out(M_edge_dt_btn_p3_out)
   );
   wire [1-1:0] M_edge_dt_btn_p4_out;
   reg [1-1:0] M_edge_dt_btn_p4_in;
-  edge_detector_3 edge_dt_btn_p4 (
+  edge_detector_7 edge_dt_btn_p4 (
     .clk(clk),
     .in(M_edge_dt_btn_p4_in),
     .out(M_edge_dt_btn_p4_out)
   );
   wire [1-1:0] M_edge_dt_btn_p5_out;
   reg [1-1:0] M_edge_dt_btn_p5_in;
-  edge_detector_3 edge_dt_btn_p5 (
+  edge_detector_7 edge_dt_btn_p5 (
     .clk(clk),
     .in(M_edge_dt_btn_p5_in),
     .out(M_edge_dt_btn_p5_out)
   );
-  wire [1-1:0] M_btn_cond_p1_out;
-  reg [1-1:0] M_btn_cond_p1_in;
-  button_conditioner_8 btn_cond_p1 (
+  wire [1-1:0] M_buttonone1_out;
+  reg [1-1:0] M_buttonone1_in;
+  button_conditioner_12 buttonone1 (
     .clk(clk),
-    .in(M_btn_cond_p1_in),
-    .out(M_btn_cond_p1_out)
+    .in(M_buttonone1_in),
+    .out(M_buttonone1_out)
   );
-  wire [1-1:0] M_btn_cond_p2_out;
-  reg [1-1:0] M_btn_cond_p2_in;
-  button_conditioner_8 btn_cond_p2 (
+  wire [1-1:0] M_buttontwo2_out;
+  reg [1-1:0] M_buttontwo2_in;
+  button_conditioner_12 buttontwo2 (
     .clk(clk),
-    .in(M_btn_cond_p2_in),
-    .out(M_btn_cond_p2_out)
+    .in(M_buttontwo2_in),
+    .out(M_buttontwo2_out)
   );
-  wire [1-1:0] M_btn_cond_p3_out;
-  reg [1-1:0] M_btn_cond_p3_in;
-  button_conditioner_8 btn_cond_p3 (
+  wire [1-1:0] M_buttonthree3_out;
+  reg [1-1:0] M_buttonthree3_in;
+  button_conditioner_12 buttonthree3 (
     .clk(clk),
-    .in(M_btn_cond_p3_in),
-    .out(M_btn_cond_p3_out)
+    .in(M_buttonthree3_in),
+    .out(M_buttonthree3_out)
   );
-  wire [1-1:0] M_btn_cond_p4_out;
-  reg [1-1:0] M_btn_cond_p4_in;
-  button_conditioner_8 btn_cond_p4 (
+  wire [1-1:0] M_buttonfour4_out;
+  reg [1-1:0] M_buttonfour4_in;
+  button_conditioner_12 buttonfour4 (
     .clk(clk),
-    .in(M_btn_cond_p4_in),
-    .out(M_btn_cond_p4_out)
+    .in(M_buttonfour4_in),
+    .out(M_buttonfour4_out)
   );
-  wire [1-1:0] M_btn_cond_p5_out;
-  reg [1-1:0] M_btn_cond_p5_in;
-  button_conditioner_8 btn_cond_p5 (
+  wire [1-1:0] M_buttonfive5_out;
+  reg [1-1:0] M_buttonfive5_in;
+  button_conditioner_12 buttonfive5 (
     .clk(clk),
-    .in(M_btn_cond_p5_in),
-    .out(M_btn_cond_p5_out)
+    .in(M_buttonfive5_in),
+    .out(M_buttonfive5_out)
   );
   
   always @* begin
@@ -135,26 +211,72 @@ module mojo_top_0 (
     spi_miso = 1'bz;
     spi_channel = 4'bzzzz;
     avr_rx = 1'bz;
-    io_led = 24'h000000;
-    io_seg = 8'hff;
-    io_sel = 4'hf;
-    M_btn_cond_p1_in = io_button[0+0-:1];
-    M_btn_cond_p2_in = io_button[1+0-:1];
-    M_btn_cond_p3_in = io_button[2+0-:1];
-    M_btn_cond_p4_in = io_button[3+0-:1];
-    M_btn_cond_p5_in = io_button[4+0-:1];
-    M_edge_dt_btn_p1_in = M_btn_cond_p1_out;
-    M_edge_dt_btn_p2_in = M_btn_cond_p2_out;
-    M_edge_dt_btn_p3_in = M_btn_cond_p3_out;
-    M_edge_dt_btn_p4_in = M_btn_cond_p4_out;
-    M_edge_dt_btn_p5_in = M_btn_cond_p5_out;
+    M_buttonone1_in = buttonone;
+    M_buttontwo2_in = buttontwo;
+    M_buttonthree3_in = buttonthree;
+    M_buttonfour4_in = buttonfour;
+    M_buttonfive5_in = buttonfive;
+    M_edge_dt_btn_p1_in = M_buttonone1_out;
+    M_edge_dt_btn_p2_in = M_buttontwo2_out;
+    M_edge_dt_btn_p3_in = M_buttonthree3_out;
+    M_edge_dt_btn_p4_in = M_buttonfour4_out;
+    M_edge_dt_btn_p5_in = M_buttonfive5_out;
     M_gameMachine_button1 = M_edge_dt_btn_p1_out;
     M_gameMachine_button2 = M_edge_dt_btn_p2_out;
     M_gameMachine_button3 = M_edge_dt_btn_p3_out;
     M_gameMachine_button4 = M_edge_dt_btn_p4_out;
     M_gameMachine_button5 = M_edge_dt_btn_p5_out;
-    io_led[0+7-:8] = M_gameMachine_outputled[0+7-:8];
-    io_led[8+7-:8] = M_gameMachine_outputled[8+7-:8];
-    io_led[16+7-:8] = M_gameMachine_outputp1[0+7-:8];
+    led1 = M_gameMachine_outputled[0+0-:1];
+    led2 = M_gameMachine_outputled[1+0-:1];
+    led3 = M_gameMachine_outputled[2+0-:1];
+    led4 = M_gameMachine_outputled[3+0-:1];
+    led5 = M_gameMachine_outputled[4+0-:1];
+    led6 = M_gameMachine_outputled[5+0-:1];
+    led7 = M_gameMachine_outputled[6+0-:1];
+    led8 = M_gameMachine_outputled[7+0-:1];
+    led9 = M_gameMachine_outputled[8+0-:1];
+    led10 = M_gameMachine_outputled[9+0-:1];
+    led11 = M_gameMachine_outputled[10+0-:1];
+    led12 = M_gameMachine_outputled[11+0-:1];
+    led13 = M_gameMachine_outputled[12+0-:1];
+    led14 = M_gameMachine_outputled[13+0-:1];
+    led15 = M_gameMachine_outputled[14+0-:1];
+    led16 = M_gameMachine_outputled[15+0-:1];
+    M_displayp1_score = M_gameMachine_outputp1;
+    M_displayp2_score = M_gameMachine_outputp2;
+    p1b1seg1 = M_displayp1_seg[13+0-:1];
+    p1b1seg2 = M_displayp1_seg[12+0-:1];
+    p1b1seg3 = M_displayp1_seg[11+0-:1];
+    p1b1seg4 = M_displayp1_seg[10+0-:1];
+    p1b1seg5 = M_displayp1_seg[9+0-:1];
+    p1b1seg6 = M_displayp1_seg[8+0-:1];
+    p1b1seg7 = M_displayp1_seg[7+0-:1];
+    p1b2seg1 = M_displayp1_seg[6+0-:1];
+    p1b2seg2 = M_displayp1_seg[5+0-:1];
+    p1b2seg3 = M_displayp1_seg[4+0-:1];
+    p1b2seg4 = M_displayp1_seg[3+0-:1];
+    p1b2seg5 = M_displayp1_seg[2+0-:1];
+    p1b2seg6 = M_displayp1_seg[1+0-:1];
+    p1b2seg7 = M_displayp1_seg[0+0-:1];
+    p2b1seg1 = M_displayp2_seg[13+0-:1];
+    p2b1seg2 = M_displayp2_seg[12+0-:1];
+    p2b1seg3 = M_displayp2_seg[11+0-:1];
+    p2b1seg4 = M_displayp2_seg[10+0-:1];
+    p2b1seg5 = M_displayp2_seg[9+0-:1];
+    p2b1seg6 = M_displayp2_seg[8+0-:1];
+    p2b1seg7 = M_displayp2_seg[7+0-:1];
+    p2b2seg1 = M_displayp2_seg[6+0-:1];
+    p2b2seg2 = M_displayp2_seg[5+0-:1];
+    p2b2seg3 = M_displayp2_seg[4+0-:1];
+    p2b2seg4 = M_displayp2_seg[3+0-:1];
+    p2b2seg5 = M_displayp2_seg[2+0-:1];
+    p2b2seg6 = M_displayp2_seg[1+0-:1];
+    p2b2seg7 = M_displayp2_seg[0+0-:1];
+    M_turn_p = M_gameMachine_outputp[0+0-:1];
+    turn_p[0+0-:1] = M_turn_turn[0+0-:1];
+    turn_p[1+0-:1] = M_turn_turn[1+0-:1];
+    M_mode_m = M_gameMachine_outputm[0+1-:2];
+    modeout[0+0-:1] = M_mode_mode[0+0-:1];
+    modeout[1+0-:1] = M_mode_mode[1+0-:1];
   end
 endmodule

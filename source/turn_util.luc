@@ -1,0 +1,19 @@
+module turn_util 
+  //convert p signal(turn info) for led signal
+  (
+    input clk,  // clock
+    input rst,
+    input p,  // clock
+    output turn[2]
+  ) {
+
+  always {
+  case(p){
+    b0: turn[0] =b1;
+    turn [1] = b0;
+    b1: turn[0] = b0;
+    turn [1] = b1;
+    default: turn=b00;
+  }
+}
+}

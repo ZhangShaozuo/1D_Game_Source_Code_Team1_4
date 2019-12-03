@@ -1,47 +1,58 @@
-module game_miniBeta (
+module game_miniBeta 
+
+  
+  //Beta instruction of our game
+  
+  (
     input clk,  // clock
     input rst,  // reset
-    input button2,
+    input button2,  // all input buttons for game_CU
     input button3,
     input button4,
     input button1,
     input button5,
     
-    output outputled[16],
-    output outputn[16],
-    output outputp1[16],
-    output outputp2[16]
+    output outputled[16],  // output for mojo_top
+    output outputn[16],    // for debug
+    output outputp1[16],   // for score of p1
+    output outputp2[16],   // for score of p2
+    output outputp[16],    // for indicating player if p==0 -> p1, if p==1 -> p2
+    output outputm[16]     // for indicating mode if m==1 -> easymode, if m==2 -> hardmode, if m==0 -> nomode selected.
+
 
   ) {
 
   //temp variables
-  sig aluin_a[16];
-  sig aluin_b[16];
+  sig aluin_a[16];  // for alu_a input
+  sig aluin_b[16];  // for alu_b input
   alu16 alu;
 
   .clk(clk){
-    //edge_detector edge_detector_variableCounter (#RISE(1), #FALL(0));
-    //edge_detector game_timer_detector(#RISE(1), #FALL(0));
     game_CU game_CU;//Here I move up game_CU from .rst(rst) because game_CU doesn't need rst
     .rst(rst){
       game_miniRegfiles game_Regfiles;
 
+
     }
   }
   always {
-  
+    // using game_CU and game_Regfiles
     game_Regfiles.we = game_CU.we;
     game_Regfiles.wa = game_CU.wa;
     game_Regfiles.ra = game_CU.ra;
     game_Regfiles.rb = game_CU.rb;
   
-    game_CU.regfile_datain = game_Regfiles.zout;
+    game_CU.regfile_datain = game_Regfiles.zout;    
+    game_CU.regfile_datain2 = game_Regfiles.pout;
     
     game_CU.button2 = button2;
     game_CU.button3 = button3;
     game_CU.button4 = button4;
     game_CU.button1 = button1;
-    game_CU.button5 = button5;
+    game_CU.button5 = button5; 
+
+
+    
     
     
     
@@ -49,8 +60,8 @@ module game_miniBeta (
     case(game_CU.asel){
       b00  : aluin_a = game_Regfiles.ra_out;
       b01  : aluin_a = b1000000000000000;
-      b10  : aluin_a = b0000000000001111; 
-      b11  : aluin_a = b0000000000000000; 
+      b10  : aluin_a = 15; 
+      b11  : aluin_a = 66;
       default :
           aluin_a= 0;
     }
@@ -70,7 +81,8 @@ module game_miniBeta (
       b1011  : aluin_b = 15;
       b1100  : aluin_b = 0;
       b1101  : aluin_b = 40;
-
+      b1110  : aluin_b = 1;
+      b1111  : aluin_b = b1111111111111111;
       default :
           aluin_b= 0;
     }
@@ -79,11 +91,13 @@ module game_miniBeta (
     alu.a = aluin_a;
     alu.b = aluin_b;
     alu.alufn = game_CU.alufn;
-    
+    // outputs connection
     game_Regfiles.data = alu.alu;
     outputled = game_Regfiles.aout;
     outputn = game_Regfiles.nout;
     outputp1 = game_Regfiles.p1_out;
     outputp2 = game_Regfiles.p2_out;
+    outputp = game_Regfiles.pout;
+    outputm = game_Regfiles.mout;
   }
 }

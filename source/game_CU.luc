@@ -1,27 +1,41 @@
-module game_CU (
+module game_CU 
+
+  //control unit(FSM) of our game
+  (
     input clk,  // clock
-    //input rst,  // reset
-    input button2,
+    input button2,  // all the buttons input
     input button3,
     input button4,
     input button1,
     input button5,
-    input regfile_datain[16], //direct reading of regfile data from read_address_b
+    input regfile_datain[16], //direct reading of regfile data from z
+    input regfile_datain2[16], //direct reading of regfile data from p
     
-    output alufn[6],
-    output asel[2],
-    output bsel[3],
-    output wa[4],
-    output we[1],
-    output ra[4],
-    output rb[4]
+    output alufn[6],  //alufn singnal
+    output asel[2],   // 2bit asel signal
+    output bsel[4], // 4bit bsel should be 4 bits
+    output wa[4],   // 4bit wa signal(writing adress)
+    output we[1],   // 1bit we signal
+    output ra[4],   // 4bit ra signal
+    output rb[4]    // 4bit rb singal
     
   ) {
 
   .clk(clk){
+    //all the FSM we used
     fsm game_fsm={
+      RESTART,
+      RESTART_1,
+      RESTART_2,
+      RESTART_3,
+      E_START,
+      E_START_2,
       START,
-      START_1,
+      START_1,    //--------------------------for hardmode
+      START_2,
+      START_3,
+      START_4,
+      START_5,
       IDLE,
       S1,
       S2_1,
@@ -31,6 +45,7 @@ module game_CU (
       S4_1,
       S4_2,
       S5,
+      S5_1,
       S6,
       S6_1,
       S7,
@@ -45,30 +60,55 @@ module game_CU (
       S11_1,
       S12,
       S12_1,
+      S13,
+      S13_1,
       S_MUL,
       S_MUL_1,
-      S_MUL_2,
       S_MUL_P1,
       S_MUL_P2,
       S_ADD_10,
       S_ADD_4,
       S_ADD_2,
       S_ADD_1,
-      S_ADD_1_1,
       S_ADD_P1,
       S_ADD_P2,
-      S_DIV,
-      S_DIV_1,
-      S_DIV_2,
-      S_DIV_P1,
-      S_DIV_P2,
+      S_SUB,
+      S_SUB_1,
+      S_SUB_P1,
+      S_SUB_P1_1,
+      S_SUB_P1_2,
+      S_SUB_P1_3,
+      S_SUB_P2,
+      S_SUB_P2_1,
+      S_SUB_P2_2,
+      S_SUB_P2_3,
       S_P1_CHECK,
       S_P1_CHECK_1,
       S_SWITCH_P1,
       S_P2_CHECK,
       S_P2_CHECK_1,
       S_SWITCH_P2,
-      WIN
+      WIN_P1,
+      WIN_P2,
+      E_START_1, //--------------------------for easy mode
+      E_S1,
+      E_S2_1,
+      E_S2,
+      E_S3,
+      E_S3_1,
+      E_S4,
+      E_S4_1,
+      E_S4_2,
+      E_S5,
+      E_S5_1,
+      E_S6,
+      E_S6_1,
+      E_S7,
+      E_S7_1,
+      E_S_TURNCHECK,
+      E_S_SWITCH_P1,
+      E_S_SWITCH_P2,
+      E_WIN
       };
   }
       
@@ -78,42 +118,110 @@ module game_CU (
   
  
   always {
+  
+    // making default values
     alufn = b0;
     asel = b00; 
-    bsel = b000;
+    bsel = b0000;
     wa = b1111;
     we = b0;
     ra = b0000;
     rb = b0000;
-     if (button1){
-        game_fsm.d = game_fsm.START;
+    game_fsm.d = game_fsm.RESTART;
+    if (button1){
+    //game reset button1. If button1 pressed, then game will reset(going for START state)
+        game_fsm.d = game_fsm.RESTART;
     }
     else{
     case(game_fsm.q){
-      game_fsm.START: // this is for 
+      //-----------starting states---------------------------
+      game_fsm.RESTART: // this is for initializing P1=0
+        alufn = b011100; //B
+        asel = b00; //anything
+        bsel = b1100; //0
+        wa = b0101; //p1
+        we = b1;
+        ra = b0000; //anything
+        game_fsm.d = game_fsm.RESTART_2;    
+             
+      game_fsm.RESTART_2: // this is for initializing P2=0
+        alufn = b011100; //B
+        asel = b00; //anything
+        bsel = b1100; //anything
+        wa = b0110; //p2
+        we = b1;
+        ra = b0000; //anything
+        game_fsm.d = game_fsm.RESTART_3;     
+      
+      game_fsm.RESTART_3: // this is for initializing m=0
+        alufn = b011100; //B
+        asel = b00; //anything
+        bsel = b1100; //1
+        wa = b1000; //m
+        we = b1;
+        ra = b0000; //anything
+        game_fsm.d = game_fsm.START;            
+          
+       game_fsm.START:  //start state
         alufn = b011010; //A
         asel = b01; //100000000000000
-        bsel = b000; //anything -->I noticed that even though bsel could be anything, it still should maintain 3bits
+        bsel = b0000; //anything
         wa = b0000;  //a
         we = b1;
         rb = b0101; //anything
-        //if counter is set
-        if (button5){                      //direct read in
-          game_fsm.d = game_fsm.START_1;
+        
+        case(c{button5,button2}){      // this is for mode selection. If button5 pressed, fsm will go for hardmode, if button2 pressed, fsm go for easy mode.
+          b10:game_fsm.d = game_fsm.START_1;
+          b01:game_fsm.d = game_fsm.E_START_1;
+          default:game_fsm.d =  game_fsm.START;  // if there is no input, stuck in current state waiting for the button pressed
         }
-        else{
-          game_fsm.d =  game_fsm.START;
-        }        
-
-      game_fsm.START_1: // this is for initializing n
+           
+     //-----------hardmode states---------------------------
+          
+      game_fsm.START_1: // this is for initializing n=0
         alufn = b011010; //A
         asel = b10; //...01111
-        bsel = b000; //anything
+        bsel = b0000; //anything
         wa = b0001; //n
         we = b1;
         rb = b0001; //anything
-        game_fsm.d = game_fsm.S1;    
-           
+        game_fsm.d = game_fsm.START_2;  
+          
+      game_fsm.START_2: // this is for initializing p=0
+        alufn = b011100; //B
+        asel = b00; //anything
+        bsel = b1100; //0
+        wa = b0100; //p
+        we = b1;
+        ra = b0000; //anything
+        game_fsm.d = game_fsm.START_3;   
+      
+      game_fsm.START_3: // this is for initializing P1=0
+        alufn = b011100; //B
+        asel = b00; //anything
+        bsel = b1100; //0
+        wa = b0101; //p1
+        we = b1;
+        ra = b0000; //anything
+        game_fsm.d = game_fsm.START_4;    
+             
+      game_fsm.START_4: // this is for initializing P2=0
+        alufn = b011100; //B
+        asel = b00; //anything
+        bsel = b1100; //anything
+        wa = b0110; //p2
+        we = b1;
+        ra = b0000; //anything
+        game_fsm.d = game_fsm.START_5;         
+          
+      game_fsm.START_5: // this is for initializing m=1
+        alufn = b011100; //B
+        asel = b00; //anything
+        bsel = b0101; //1
+        wa = b1000; //m
+        we = b1;
+        ra = b0000; //anything
+        game_fsm.d = game_fsm.S1;   
          
       game_fsm.S1:
         alufn = b011100; //B (x <- input)
@@ -121,33 +229,33 @@ module game_CU (
         wa = b0010; //x
         we = b1;
         ra = b0000; //anything
-        if (button2){                      //direct read in
-          bsel = b001; //input
+        if (button2){                      //if button 2 pressed bsel = 2
+          bsel = b0001; //input
           game_fsm.d = game_fsm.S3;      
         }
         else{
-        if (button3){                      //direct read in
-          bsel = b010; //input
+        if (button3){                      //if button 2 pressed bsel = 3
+          bsel = b0010; //input
           game_fsm.d = game_fsm.S3;      
         }
             else{
-        if (button4){                      //direct read in
-          bsel = b011; //input
+        if (button4){                      //if button 2 pressed bsel = 4
+          bsel = b0011; //input
           game_fsm.d = game_fsm.S3;      
         }
         else{
-          bsel = b000;  //what if bsel=111, don't know why should be b000
+          bsel = b0000;  //what if bsel=111, don't know why should be b000
           game_fsm.d = game_fsm.S1;
           }
         }
      }
 
   
-      game_fsm.S3: 
+      game_fsm.S3: //checking whether input is bigger than left leds or not
         alufn = b110101;// CMPLT (n<x)
         asel = b00; 
-        bsel = b000; // select the input , "0" from Rb , "1" from input;
-        wa = b0011;
+        bsel = b0000; // rb
+        wa = b0011;//z
         we = b1;
         ra = b0001;  //n
         rb = b0010;  //x
@@ -160,14 +268,14 @@ module game_CU (
           game_fsm.d = game_fsm.S4;
         }
         else{
-          game_fsm.d =  game_fsm.S5;		//if z is 0
+          game_fsm.d = game_fsm.S5;		//if z is 0
         }  
           
         
-      game_fsm.S4:  //overflow
+      game_fsm.S4:  //overflow happens need to change input value and reset led
         alufn = b000001;// SUB  x = x-n
         asel = b00; //ra
-        bsel = b0000; // rb  select the input , "0" from Rb , "1" from input;
+        bsel = b0000; // rb
         wa = b0010;  //x
         we = b1;
         ra = b0010;  //x
@@ -175,16 +283,16 @@ module game_CU (
         game_fsm.d = game_fsm.S4_1;
           
 
-      game_fsm.S4_1: // this is for reset a
+      game_fsm.S4_1: // this is for reset a(led output)
         alufn = b011010; //A
-        asel = b01; //1000000000000000
+        asel = b01;
         bsel = b0000; //anything
         wa = b0000;
         we = b1;
         rb = b0101; //anything
         game_fsm.d = game_fsm.S4_2;
           
-      game_fsm.S4_2: // this is for reset n
+      game_fsm.S4_2: // this is for reset n(left leds)
         alufn = b011010; //A
         asel = b10; 
         bsel = b0000; //anything
@@ -193,42 +301,34 @@ module game_CU (
         rb = b0001; //anything
         game_fsm.d = game_fsm.S5;  
        
-      game_fsm.S5:
-        alufn = b100011;//SHRA(a,x,a)
+      game_fsm.S5:  //lighting up leds depends on input x.
+        alufn = b100011;//SHRA(a,x,a) 
         asel = b00; 
-        bsel = b0000; // select the input , "0" from Rb , "1" from input;
+        bsel = b0000; //rb
         wa = b0000; //a
         we = b1;
         ra = b0000; //a
         rb = b0010; //x
         game_fsm.d = game_fsm.S6;
        
-      game_fsm.S6:
+      game_fsm.S6:  // change the number of left leds.
         alufn = b000001;// SUB n-x
         asel = b00; 
-        bsel = b0000; // select the input , "0" from Rb , "1" from input;
+        bsel = b0000; //rb
         wa = b0001;  //n
         we = b1;
         ra = b0001;  //n
         rb = b0010;  //x
-        game_fsm.d = game_fsm.S6_1;
-          
-     game_fsm.S6_1:
-        alufn = b000001; //SUB m = 15-n
-        asel = b10;  //15
-        bsel = b0000;
-        wa = b1000; //m
-        we = b1;
-        rb = b0001; //n
         game_fsm.d = game_fsm.S7;
           
-     game_fsm.S7:
-        alufn = b110011;// CMPEQ m==2
+    // from here is for checking the position to choose how much point to change.
+     game_fsm.S7: // position2
+        alufn = b110011;// CMPEQ n==15-2
         asel = b00; // ra
-        bsel = b0001; // 2  select the input , "0" from Rb , "1" from input;
+        bsel = b1010; // 13
         wa = b0011; // z
         we = b1;
-        ra = b1000; //m
+        ra = b0001; //n
         game_fsm.d = game_fsm.S7_1;
         
       game_fsm.S7_1:
@@ -239,13 +339,13 @@ module game_CU (
           game_fsm.d =  game_fsm.S8;
         }       
 
-     game_fsm.S8:
-        alufn = b110011;// CMPEQ m==15
+     game_fsm.S8:  //position 15
+        alufn = b110011;// CMPEQ n==15-15
         asel = b00; // ra
-        bsel = b1011; // 15  select the input , "0" from Rb , "1" from input;
+        bsel = b1100; // 0 
         wa = b0011; // z
         we = b1;
-        ra = b1000; //m
+        ra = b0001; //n
         game_fsm.d = game_fsm.S8_1;
         
       game_fsm.S8_1:
@@ -256,13 +356,13 @@ module game_CU (
           game_fsm.d =  game_fsm.S9;
         }       
 
-     game_fsm.S9:
-        alufn = b110011;// CMPEQ m==11
+     game_fsm.S9:  //position 11
+        alufn = b110011;// CMPEQ n==15-11
         asel = b00; // ra
-        bsel = b1001; // 11  select the input , "0" from Rb , "1" from input;
+        bsel = b0011; // 4  select the input , "0" from Rb , "1" from input;
         wa = b0011; // z
         we = b1;
-        ra = b1000; //m
+        ra = b0001; //n
         game_fsm.d = game_fsm.S9_1;
         
       game_fsm.S9_1:
@@ -273,13 +373,13 @@ module game_CU (
           game_fsm.d =  game_fsm.S10;
         }
           
-     game_fsm.S10:
-        alufn = b110011;// CMPEQ m==13
+     game_fsm.S10://position 13
+        alufn = b110011;// CMPEQ n==15-13
         asel = b00; // ra
-        bsel = b1010; // 13  select the input , "0" from Rb , "1" from input;
+        bsel = b0001; // 2  select the input , "0" from Rb , "1" from input;
         wa = b0011; // z
         we = b1;
-        ra = b1000; //m
+        ra = b0001; //n
         game_fsm.d = game_fsm.S10_1;
         
       game_fsm.S10_1:
@@ -290,13 +390,13 @@ module game_CU (
           game_fsm.d =  game_fsm.S11;
         }  
              
-     game_fsm.S11:
-        alufn = b110011;// CMPEQ m==6
+     game_fsm.S11:  //position 6
+        alufn = b110011;// CMPEQ n==15-6
         asel = b00; // ra
-        bsel = b0111; // 6  select the input , "0" from Rb , "1" from input;
+        bsel = b1000; // 9  select the input , "0" from Rb , "1" from input;
         wa = b0011; // z
         we = b1;
-        ra = b1000; //m
+        ra = b0001; //n
         game_fsm.d = game_fsm.S11_1;
         
       game_fsm.S11_1:
@@ -307,24 +407,44 @@ module game_CU (
           game_fsm.d =  game_fsm.S12;
         } 
           
-     game_fsm.S12:
-        alufn = b110011;// CMPEQ m==9
+     game_fsm.S12:  //position 9
+        alufn = b110011;// CMPEQ n==15-9
         asel = b00; // ra
-        bsel = b0001; // 2  select the input , "0" from Rb , "1" from input;
-        wa = b1000; // z
+        bsel = b0111; // 6  select the input , "0" from Rb , "1" from input;
+        wa = b0011; // z
         we = b1;
-        ra = b1000; //m
+        ra = b0001; //n
         game_fsm.d = game_fsm.S12_1;
         
       game_fsm.S12_1:
         if (regfile_datain[0]){			//if z is 1                    
-          game_fsm.d = game_fsm.S_DIV;
+          game_fsm.d = game_fsm.S_SUB;
         }
         else{					//if z is 0
-          game_fsm.d =  game_fsm.S1;
+          game_fsm.d =  game_fsm.S13;
         } 
           
-      game_fsm.S_MUL: 
+     game_fsm.S13:  // checking player's turn and move to swithing turn states.
+        alufn = b110011;// CMPEQC p==0
+        asel = b00; // ra
+        bsel = b1100; // 0 
+        wa = b0011; // z
+        we = b1;
+        ra = b0100; //p
+        game_fsm.d = game_fsm.S13_1;
+        
+      game_fsm.S13_1:
+        if (regfile_datain2[0]){			//if z is 1  
+          game_fsm.d =  game_fsm.S_SWITCH_P2;                  
+          
+        }
+        else{					//if z is 0
+          game_fsm.d = game_fsm.S_SWITCH_P1;
+        }
+          
+          
+          
+     game_fsm.S_MUL: //instantiate tp for multiply process
         alufn = b011100; //B
         asel = b00; // ra
         bsel = b0001; // 2
@@ -332,25 +452,17 @@ module game_CU (
         we = b1;
         ra = b0000; // anything
         game_fsm.d = game_fsm.S_MUL_1;        
-          
-     game_fsm.S_MUL_1:
-        alufn = b110011;// CMPEQ p == 1
-        asel = b00; // ra
-        bsel = b1100; // 0  select the input , "0" from Rb , "1" from input;
-        wa = b0011; // z
-        we = b1;
-        ra = b0100; //p
-        game_fsm.d = game_fsm.S_MUL_2;
         
-      game_fsm.S_MUL_2:
-        if (regfile_datain[0]){			//if z=1                     
-          game_fsm.d = game_fsm.S_MUL_P1;
+      game_fsm.S_MUL_1:  // checking turn
+        if (regfile_datain2[0]){			//if p==1                     
+          game_fsm.d =  game_fsm.S_MUL_P2;
+
         }
         else{					//if z=0
-          game_fsm.d =  game_fsm.S_MUL_P2;
+          game_fsm.d = game_fsm.S_MUL_P1;     
         }
           
-      game_fsm.S_MUL_P1:
+      game_fsm.S_MUL_P1:  // multiply point of p1
         alufn = 000010; // MUL p1*2=p1
         asel = b00;  // ra
         bsel = b0000; //rb
@@ -360,7 +472,7 @@ module game_CU (
         rb = b0111; //tp 
         game_fsm.d = game_fsm.S_P1_CHECK;
        
-      game_fsm.S_MUL_P2:
+      game_fsm.S_MUL_P2:  // multiply point of p1
         alufn = 000010; // MUL p2*tp=p2
         asel = b00;  // ra
         bsel = b0000; //rb
@@ -371,7 +483,7 @@ module game_CU (
         game_fsm.d = game_fsm.S_P2_CHECK;    
           
           
-      game_fsm.S_ADD_10: // tp=10
+      game_fsm.S_ADD_10: //instantiate tp=10 for adding process
         alufn = b011100; //B
         asel = b00; // ra
         bsel = b0100; // 10
@@ -381,7 +493,7 @@ module game_CU (
         game_fsm.d = game_fsm.S_ADD_1;    
           
           
-      game_fsm.S_ADD_4:// tp=10
+      game_fsm.S_ADD_4://instantiate tp=4 for adding process
         alufn = b011100; //B
         asel = b00; // ra
         bsel = b0011; // 4
@@ -390,7 +502,7 @@ module game_CU (
         ra = b0000; // anything
         game_fsm.d = game_fsm.S_ADD_1;        
           
-      game_fsm.S_ADD_2:// tp=10
+      game_fsm.S_ADD_2://instantiate tp=2 for adding process
         alufn = b011100; //B
         asel = b00; // ra
         bsel = b0001; // 2
@@ -398,25 +510,17 @@ module game_CU (
         we = b1;
         ra = b0000; // anything
         game_fsm.d = game_fsm.S_ADD_1;    
-          
-     game_fsm.S_ADD_1:
-        alufn = b110011;// CMPEQ p == 1
-        asel = b00; // ra
-        bsel = b1100; // 0  select the input , "0" from Rb , "1" from input;
-        wa = b0011; // z
-        we = b1;
-        ra = b0100; //p
-        game_fsm.d = game_fsm.S_ADD_1_1;
         
-      game_fsm.S_ADD_1_1:
-        if (regfile_datain[0]){			//if z=1                    
-          game_fsm.d = game_fsm.S_ADD_P1;
+      game_fsm.S_ADD_1: // checking player's turn and move to swithing turn states.
+        if (regfile_datain2[0]){			//if p==1     
+          game_fsm.d =  game_fsm.S_ADD_P2;               
+
         }
         else{					//if z=0
-          game_fsm.d =  game_fsm.S_ADD_P2;
+          game_fsm.d = game_fsm.S_ADD_P1;   
         }
           
-      game_fsm.S_ADD_P1:
+      game_fsm.S_ADD_P1: 
         alufn = 000000; // ADD p1+tp=p1
         asel = b00;  // ra
         bsel = b0000; //rb
@@ -436,34 +540,53 @@ module game_CU (
         rb = b0111; //tp 
         game_fsm.d = game_fsm.S_P2_CHECK;     
           
-      game_fsm.S_DIV: // this is for initializing n
+      game_fsm.S_SUB: // this is for initializing for subtracting tp=6
         alufn = b011100; //B
         asel = b00; // ra
-        bsel = b0001; // 2
+        bsel = b0111; // 6
         wa = b0111; // tp
         we = b1;
         ra = b0000; // anything
-        game_fsm.d = game_fsm.S_DIV_1;        
+        game_fsm.d = game_fsm.S_SUB_1;        
           
-     game_fsm.S_DIV_1:
-        alufn = b110011;// CMPEQ p == 1
-        asel = b00; // ra
-        bsel = b1100; // 0  select the input , "0" from Rb , "1" from input;
-        wa = b0011; // z
-        we = b1;
-        ra = b0100; //p
-        game_fsm.d = game_fsm.S_DIV_2;
         
-      game_fsm.S_DIV_2:
-        if (regfile_datain[0]){                      //direct read in
-          game_fsm.d = game_fsm.S_DIV_P1;
+      game_fsm.S_SUB_1:
+        if (regfile_datain2[0]){                     //p==1
+          game_fsm.d =  game_fsm.S_SUB_P2_1;
+
+        }
+        else{                     //p==0
+          game_fsm.d = game_fsm.S_SUB_P1_1;
+        }
+
+      game_fsm.S_SUB_P1_1: // check if score is less then 6, if less than 6 score =0, if not just go for subtracting
+        alufn = b110101;// CMPLT (n<6)
+        asel = b00; // ra
+        bsel = b0111; // 6
+        wa = b0011;  //z
+        we = b1;
+        ra = b0101;  //p1
+        game_fsm.d=game_fsm.S_SUB_P1_2; 
+          
+      game_fsm.S_SUB_P1_2:
+        if (regfile_datain[0]){                    //  z==1
+          game_fsm.d = game_fsm.S_SUB_P1_3;
         }
         else{
-          game_fsm.d =  game_fsm.S_DIV_P2;
-        }
+          game_fsm.d =  game_fsm.S_SUB_P1;
+        }    
           
-      game_fsm.S_DIV_P1:
-        alufn = 000100; // MUL p1/tp=p1
+      game_fsm.S_SUB_P1_3:
+        alufn = b011100; //B
+        asel = b00; // ra
+        bsel = b1100; // 0
+        wa = b0101; // p1
+        we = b1;
+        ra = b0000; // anything
+        game_fsm.d = game_fsm.S_P1_CHECK; 
+               
+      game_fsm.S_SUB_P1:
+        alufn = 000001; // SUB p1-tp=p1
         asel = b00;  // ra
         bsel = b0000; //rb
         wa = b0101; // p1 
@@ -472,8 +595,34 @@ module game_CU (
         rb = b0111; //tp 
         game_fsm.d = game_fsm.S_P1_CHECK;
        
-      game_fsm.S_DIV_P2:
-        alufn = 000100; // MUL p2/tp=p2
+      game_fsm.S_SUB_P2_1: 
+        alufn = b110101;// CMPLT (n<6)
+        asel = b00; // ra
+        bsel = b0111; // 6
+        wa = b0011;  //z
+        we = b1;
+        ra = b0110;  //p2
+        game_fsm.d=game_fsm.S_SUB_P2_2; 
+          
+      game_fsm.S_SUB_P2_2:
+        if (regfile_datain[0]){                    //  z==1
+          game_fsm.d = game_fsm.S_SUB_P2_3;
+        }
+        else{
+          game_fsm.d =  game_fsm.S_SUB_P2;
+        }    
+          
+      game_fsm.S_SUB_P2_3:
+        alufn = b011100; //B
+        asel = b00; // ra
+        bsel = b1100; // 0
+        wa = b0110; // p2
+        we = b1;
+        ra = b0000; // anything
+        game_fsm.d = game_fsm.S_P2_CHECK; 
+          
+      game_fsm.S_SUB_P2:
+        alufn = 000001; // SUB p2-tp=p2
         asel = b00;  // ra
         bsel = b0000; //rb
         wa = b0110; // p2
@@ -483,24 +632,24 @@ module game_CU (
         game_fsm.d = game_fsm.S_P2_CHECK; 
           
           
-      game_fsm.S_P1_CHECK: 
+      game_fsm.S_P1_CHECK:  //checking score is less than 40, if not go for winning state
         alufn = b110101;// CMPLT (n<40)
         asel = b00; // ra
-        bsel = b1101; // 40 select the input , "0" from Rb , "1" from input;
+        bsel = b1101; // 40
         wa = b0011;
         we = b1;
         ra = b0101;  //p1
         game_fsm.d=game_fsm.S_P1_CHECK_1;  
           
       game_fsm.S_P1_CHECK_1:
-        if (regfile_datain[0]){			//if z=1                    
+        if (regfile_datain[0]){			//if z==1                    
           game_fsm.d = game_fsm.S_SWITCH_P1;
         }
-        else{					//if z=0
-          game_fsm.d =  game_fsm.WIN;
+        else{					//if z==0
+          game_fsm.d =  game_fsm.WIN_P1;
         } 
           
-      game_fsm.S_SWITCH_P1:
+      game_fsm.S_SWITCH_P1: //switch p1 -> p2
         alufn = b000000; // p+1=p        
         asel = b00;  //ra
         bsel = b0101; //1 
@@ -509,24 +658,24 @@ module game_CU (
         ra = b0100; //p 
         game_fsm.d=game_fsm.S1; 
           
-      game_fsm.S_P2_CHECK: 
+      game_fsm.S_P2_CHECK: //checking score is less than 40, if not go for winning state
         alufn = b110101;// CMPLT (n<40)
         asel = b00; // ra
-        bsel = b1101; // 40 select the input , "0" from Rb , "1" from input;
+        bsel = b1101; // 40 
         wa = b0011; //z
         we = b1;
         ra = b0110;  //p2
         game_fsm.d=game_fsm.S_P2_CHECK_1;  
           
       game_fsm.S_P2_CHECK_1:
-        if (regfile_datain[0]){                      //direct read in
+        if (regfile_datain[0]){                    //  z==1
           game_fsm.d = game_fsm.S_SWITCH_P2;
         }
         else{
-          game_fsm.d =  game_fsm.WIN;
+          game_fsm.d =  game_fsm.WIN_P2;
         }    
           
-      game_fsm.S_SWITCH_P2:
+      game_fsm.S_SWITCH_P2: //switch p1 -> p2
         alufn = b000001; // p-1=p        
         asel = b00;  //ra
         bsel = b0101; //1 
@@ -537,8 +686,216 @@ module game_CU (
                 
           
              
-      game_fsm.WIN:
-        game_fsm.d = game_fsm.START;
+      game_fsm.WIN_P1: // if press button5, restart the game
+        alufn = b011010; //A
+        asel = b11; //66
+        bsel = b0000; //anything
+        wa = b0101; //p1
+        we = b1;
+        rb = b0000; //anything
+        if(button5){
+            game_fsm.d = game_fsm.RESTART;}
+        else{
+            game_fsm.d = game_fsm.WIN_P1;}
+
+          
+      game_fsm.WIN_P2:  // if press button5, restart the game
+        alufn = b011010; //A
+        asel = b11; //66
+        bsel = b0000; //anything
+        wa = b0110; //p1
+        we = b1;
+        rb = b0000; //anything
+        if(button5){
+            game_fsm.d = game_fsm.RESTART;}
+        else{
+            game_fsm.d = game_fsm.WIN_P2;}
+          
+        
+        
+//_________________________________________EASYMODE states_______________________________________________________________________ 
+             
+           
+          
+      game_fsm.E_START_1: // this is for initializing n=0
+        alufn = b011010; //A
+        asel = b10; //...01111
+        bsel = b0000; //anything
+        wa = b0001; //n
+        we = b1;
+        rb = b0001; //anything
+        game_fsm.d = game_fsm.E_START_2;  
+          
+      game_fsm.E_START_2: // this is for initializing m=2
+        alufn = b011100; //B
+        asel = b00; //anything
+        bsel = b0001; //2
+        wa = b1000; //m
+        we = b1;
+        ra = b0000; //anything
+        game_fsm.d = game_fsm.E_S1;   
+       
+         
+      game_fsm.E_S1:
+        alufn = b011100; //B (x <- input)
+        asel = b00; //anything
+        wa = b0010; //x
+        we = b1;
+        ra = b0000; //anything
+        if (button2){                      //direct read in
+          bsel = b0001; //input
+          game_fsm.d = game_fsm.E_S2;      
+        }
+        else{
+        if (button3){                      //direct read in
+          bsel = b0010; //input
+          game_fsm.d = game_fsm.E_S2;      
+        }
+            else{
+        if (button4){                      //direct read in
+          bsel = b0011; //input
+          game_fsm.d = game_fsm.E_S2;      
+        }
+        else{
+          bsel = b0000;  //what if bsel=111, don't know why should be b000
+          game_fsm.d = game_fsm.E_S1;
+          }
+        }
+     }
+
+        
+      game_fsm.E_S2: 
+        alufn = b110011;// CMPEQ(n=x)
+        asel = b00; 
+        bsel = b0000; // select the input , "0" from Rb , "1" from input;
+        wa = b0011;//z
+        we = b1;
+        ra = b0001;  //n
+        rb = b0010;  //x
+        game_fsm.d=game_fsm.E_S2_1;
+          
+          
+       
+      game_fsm.E_S2_1:
+        if (regfile_datain[0]){                 //if z is 1
+          game_fsm.d = game_fsm.E_WIN;
+        }
+        else{
+          game_fsm.d = game_fsm.E_S3;		//if z is 0
+        }  
+  
+      game_fsm.E_S3: 
+        alufn = b110101;// CMPLT (n<x)
+        asel = b00; 
+        bsel = b0000; // select the input , "0" from Rb , "1" from input;
+        wa = b0011;//z
+        we = b1;
+        ra = b0001;  //n
+        rb = b0010;  //x
+        game_fsm.d=game_fsm.E_S3_1;
+          
+          
+       
+      game_fsm.E_S3_1:
+        if (regfile_datain[0]){                 //if z is 1
+          game_fsm.d = game_fsm.E_S4;
+        }
+        else{
+          game_fsm.d = game_fsm.E_S5;		//if z is 0
+        }  
+          
+        
+      game_fsm.E_S4:  //overflow
+        alufn = b000001;// SUB  x = x-n
+        asel = b00; //ra
+        bsel = b0000; // rb  select the input , "0" from Rb , "1" from input;
+        wa = b0010;  //x
+        we = b1;
+        ra = b0010;  //x
+        rb = b0001;  //n            
+        game_fsm.d = game_fsm.E_S4_1;
+          
+
+      game_fsm.E_S4_1: // this is for reset a
+        alufn = b011010; //A
+        asel = b01;
+        bsel = b0000; //anything
+        wa = b0000;
+        we = b1;
+        rb = b0101; //anything
+        game_fsm.d = game_fsm.E_S4_2;
+          
+      game_fsm.E_S4_2: // this is for reset n
+        alufn = b011010; //A
+        asel = b10; 
+        bsel = b0000; //anything
+        wa = b0001; //n
+        we = b1;
+        rb = b0001; //anything
+        game_fsm.d = game_fsm.E_S5;  
+       
+      game_fsm.E_S5:
+        alufn = b100011;//SHRA(a,x,a)
+        asel = b00; 
+        bsel = b0000; // select the input , "0" from Rb , "1" from input;
+        wa = b0000; //a
+        we = b1;
+        ra = b0000; //a
+        rb = b0010; //x
+        game_fsm.d = game_fsm.E_S6;
+       
+      game_fsm.E_S6:
+        alufn = b000001;// SUB n-x
+        asel = b00; 
+        bsel = b0000; // select the input , "0" from Rb , "1" from input;
+        wa = b0001;  //n
+        we = b1;
+        ra = b0001;  //n
+        rb = b0010;  //x
+        game_fsm.d = game_fsm.E_S_TURNCHECK;
+          
+          
+      game_fsm.E_S_TURNCHECK:
+        if (regfile_datain2[0]){			//if p==1     
+          game_fsm.d =  game_fsm.E_S_SWITCH_P2;               
+
+        }
+        else{					//if p==0
+          game_fsm.d = game_fsm.E_S_SWITCH_P1;   
+        }
+          
+                
+      game_fsm.E_S_SWITCH_P1:
+        alufn = b000000; // p+1=p        
+        asel = b00;  //ra
+        bsel = b0101; //1 
+        wa = b0100;  //p 
+        we= b1;
+        ra = b0100; //p 
+        game_fsm.d=game_fsm.E_S1; 
+          
+      game_fsm.E_S_SWITCH_P2:
+        alufn = b000001; // p-1=p        
+        asel = b00;  //ra
+        bsel = b0101; //1 
+        wa = b0100;  //p 
+        we= b1;
+        ra = b0100; //p 
+        game_fsm.d=game_fsm.E_S1; 
+          
+       game_fsm.E_WIN:
+        alufn = b011100; //B
+        asel = b00; // anything
+        bsel = b1111; //11111...111
+        wa = b0000; //a
+        we = b1;
+        ra = b0000; //anything
+        if(button5){
+            game_fsm.d = game_fsm.RESTART;}
+        else{
+            game_fsm.d = game_fsm.E_WIN;}
+          
+             
       }}}}
         
                   
@@ -551,13 +908,3 @@ module game_CU (
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
- 
